@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 6: Reasoning and Handoff Explained</title>
+  <style>
+    body {
+      background: #FFF7ED;
+      color: #1e293b;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+    }
+    header {
+      background: linear-gradient(to right, #fb923c, #f43f5e);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+    header h1 {
+      font-size: 2.3rem;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+    .summary {
+      background: #FEF3C7;
+      border-left: 5px solid #F97316;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+    .summary h2 {
+      margin-top: 0;
+    }
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .code-block pre {
+      background: #FFFBEB;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1e293b;
+    }
+    .code-block pre span {
+      display: block;
+    }
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #A16207;
+    }
+    .explanation p {
+      margin-bottom: 20px;
+      background: #FFECEC;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #F43F5E;
+    }
+    .explanation strong {
+      color: #D97706;
+    }
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 6: Reasoning and Handoff</h1>
+    <p>Agents reason about their response and decide who speaks next, returning structured JSON.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>This pattern introduces the concept of a handoff agent. Each agent still derives from a common base class, but instead of returning plain text, it returns a JSON object containing its message, the next agent to speak (<code>handoff_to</code>), and a brief reason. The orchestrator no longer decides who goes next—it simply reads the <code>handoff_to</code> field and routes the conversation accordingly. If JSON parsing fails, a fallback ensures the conversation continues.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os</span>
+<span>import json</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span># Base agent remains similar: stores name, prompt, memory and Gemini client.</span>
+<span>class BaseAgent():</span>
+<span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.memory = []</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+<span>    def think(self, input_text):</span>
+<span>        if not input_text:</span>
+<span>            input_text = "continue"</span>
+<span>        # Build Gemini request and stream response</span>
+<span>        contents = [</span>
+<span>            types.Content(role="user", parts=[types.Part.from_text(text=input_text)])</span>
+<span>        ]</span>
+<span>        config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span>
+<span>        )</span>
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(</span>
+<span>            model=self.model, contents=contents, config=config</span>
+<span>        ):</span>
+<span>            if chunk.text:</span>
+<span>                response += chunk.text</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+
+<span># HandoffAgent: returns JSON with message, handoff_to, and reason.</span>
+<span>class HandoffAgent(BaseAgent):</span>
+<span>    def __init__(self, name, persona, peers):</span>
+<span>        peer_list = ", ".join(peers)</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"""{persona}</span>
+
+<span>You are part of a multi-agent conversation. After responding, you must decide who speaks next.</span>
+
+<span>Available agents to hand off to: {peer_list}</span>
+
+<span>You MUST return ONLY a JSON object with fields:</span>
+<span>- message: your reply</span>
+<span>- handoff_to: one of {peer_list}</span>
+<span>- reason: one sentence justification</span>
+<span>"""</span>
+        )
+    def think_and_handoff(self, input_text):</span>
+<span>        raw = self.think(input_text)</span>
+<span>        # Remove markdown fences if present</span>
+<span>        clean = raw.strip()</span>
+<span>        if clean.startswith("```"):</span>
+<span>            parts = clean.split("```")</span>
+<span>            clean = parts[1] if len(parts) > 1 else clean</span>
+<span>            if clean.startswith("json"):</span>
+<span>                clean = clean[4:]</span>
+<span>        clean = clean.strip()</span>
+<span>        try:</span>
+<span>            parsed = json.loads(clean)</span>
+<span>            return parsed</span>
+<span>        except json.JSONDecodeError:</span>
+<span>            # Fallback when parsing fails</span>
+<span>            return {</span>
+<span>                "message": raw,</span>
+<span>                "handoff_to": None,</span>
+<span>                "reason": "parse error — orchestrator will decide next agent"</span>
+<span>            }</span>
+
+<span># Specialized agents with different personas</span>
+<span>class Human(HandoffAgent):</span>
+<span>    def __init__(self, name, peers):</span>
+<span>        super().__init__(name, f"You are {name}, a human. Talk naturally and curiously.", peers)</span>
+
+<span>class Dog(HandoffAgent):</span>
+<span>    def __init__(self, name, peers):</span>
+<span>        super().__init__(name, f"You are {name}, a playful dog. You bark, wag, and are enthusiastic.", peers)</span>
+
+<span>class Vet(HandoffAgent):</span>
+<span>    def __init__(self, name, peers):</span>
+<span>        super().__init__(name, f"You are {name}, a veterinarian. You give calm, expert advice about animals.", peers)</span>
+
+<span># Orchestrator: reads handoff_to and routes accordingly</span>
+<span>def orchestrate(agents, starter_name, opening_message, turns=6):</span>
+<span>    current_name = starter_name</span>
+<span>    message = opening_message</span>
+<span>    for i in range(turns):</span>
+<span>        current_agent = agents[current_name]</span>
+<span>        result = current_agent.think_and_handoff(message)</span>
+<span>        print(f"{current_name}: {result.get('message', '')}")</span>
+<span>        print(f"→ Handing off to: {result.get('handoff_to')} | Reason: {result.get('reason')}")</span>
+<span>        next_name = result.get("handoff_to")</span>
+<span>        if not next_name or next_name not in agents:</span>
+<span>            print(f"Invalid handoff target '{next_name}'. Stopping.")</span>
+<span>            break</span>
+<span>        message = result.get("message", "continue")</span>
+<span>        current_name = next_name</span>
+
+<span># Main: set up agents and start conversation</span>
+<span>if __name__ == "__main__":</span>
+<span>    human = Human("Shashank", peers=["Bruno", "DrMehra"])</span>
+<span>    dog   = Dog("Bruno",      peers=["Shashank", "DrMehra"])</span>
+<span>    vet   = Vet("DrMehra",    peers=["Shashank", "Bruno"])</span>
+<span>    agents = {</span>
+<span>        "Shashank": human,</span>
+<span>        "Bruno":    dog,</span>
+<span>        "DrMehra":  vet</span>
+<span>    }</span>
+<span>    orchestrate(agents, starter_name="Shashank", opening_message="Bruno hasn't been eating well lately.", turns=6)</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>BaseAgent:</strong> The base class encapsulates common behavior: storing the agent’s name, system prompt, memory, and a Gemini client. The <code>think()</code> method constructs a request, streams the model’s response, appends the conversation to memory, and returns the text.</p>
+        <p><strong>HandoffAgent:</strong> Inherits from <code>BaseAgent</code> and enforces a structured JSON output. Its system prompt lists available peers and instructs the model to return a JSON object with <code>message</code>, <code>handoff_to</code>, and <code>reason</code>. The <code>think_and_handoff()</code> method parses the JSON and falls back gracefully if parsing fails.</p>
+        <p><strong>Specialized Agents:</strong> Three subclasses—<code>Human</code>, <code>Dog</code>, and <code>Vet</code>—define different personas via their prompts and pass along the list of peers who can speak next.</p>
+        <p><strong>Orchestrator:</strong> Instead of deciding the next speaker, the orchestrator reads the <code>handoff_to</code> field from the agent’s JSON response. It prints the agent’s message and handoff decision, then routes the conversation. If the agent hands off to an invalid peer, the conversation stops.</p>
+        <p><strong>Main:</strong> Sets up the agents (Shashank, Bruno, Dr&nbsp;Mehra) with appropriate peers and kicks off the conversation with a concern about Bruno’s eating habits. Each agent thinks, speaks, and decides who should speak next, creating a dynamic, self‑routing dialog.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
