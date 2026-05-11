@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern&nbsp;9 – Debate Pattern</title>
+  <style>
+    /*
+      This page explains the Debate pattern used in the Agentic‑AI
+      repository. The layout uses a two‑column grid: the left side
+      displays the original Python source code with line numbers, and
+      the right side provides a detailed explanation of each section.
+
+      Bright, accessible colours are used to make the content easy
+      to follow. Feel free to adjust the colours if this file is
+      integrated into a larger website.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
+      background: #f7f8fc;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      padding: 2.5rem;
+      max-width: 1400px;
+      margin: auto;
+    }
+    .code-column {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .code-column pre {
+      margin: 0;
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: "Fira Code", monospace;
+      font-size: 0.90rem;
+      white-space: pre;
+    }
+    .code-column .line {
+      display: block;
+    }
+    .code-column .num {
+      display: inline-block;
+      width: 2.5rem;
+      color: #9ca3af;
+      user-select: none;
+    }
+    .code-column .content {
+      display: inline-block;
+    }
+    .explanation-column {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .explanation-column h2 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      color: #4f46e5;
+    }
+    .explanation-column h3 {
+      margin-top: 1.2rem;
+      font-size: 1.2rem;
+      color: #4338ca;
+    }
+    .explanation-column p {
+      margin-top: 0.8rem;
+      margin-bottom: 0.8rem;
+      font-size: 0.96rem;
+    }
+    .explanation-column ul {
+      margin-top: 0.6rem;
+      padding-left: 1.2rem;
+    }
+    .explanation-column li {
+      margin-bottom: 0.4rem;
+    }
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern&nbsp;9 – Debate Pattern</h1>
+    <p>
+      This pattern pits two agents against each other in an adversarial
+      debate. Each debater takes a position on a topic, attacks
+      their opponent, and a judge delivers a final verdict. The
+      implementation uses Python’s <code>asyncio</code> to run
+      conversations concurrently and demonstrates how structured
+      multi‑stage interactions can produce richer reasoning.
+    </p>
+  </header>
+  <main class="container">
+    <!-- Code Column -->
+    <div class="code-column">
+      <pre>
+<span class="line"><span class="num">1</span><span class="content">import os</span></span>
+<span class="line"><span class="num">2</span><span class="content">import asyncio</span></span>
+<span class="line"><span class="num">3</span><span class="content">from google import genai</span></span>
+<span class="line"><span class="num">4</span><span class="content">from google.genai import types</span></span>
+
+<span class="line"><span class="num">6</span><span class="content"># ── Base Agent ────────────────────────────────────────────────────────────────</span></span>
+<span class="line"><span class="num">7</span><span class="content">class BaseAgent:</span></span>
+<span class="line"><span class="num">8</span><span class="content">    def __init__(self, name: str, sys_prompt: str, model: str = "gemini-2.5-flash-lite"):</span></span>
+<span class="line"><span class="num">9</span><span class="content">        self.name = name</span></span>
+<span class="line"><span class="num">10</span><span class="content">        self.sys_prompt = sys_prompt</span></span>
+<span class="line"><span class="num">11</span><span class="content">        self.memory: list[tuple[str, str]] = []</span></span>
+<span class="line"><span class="num">12</span><span class="content">        self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])</span></span>
+<span class="line"><span class="num">13</span><span class="content">        self.model = model</span></span>
+<span class="line"><span class="num">14</span><span class="content">        self._config = types.GenerateContentConfig(</span></span>
+<span class="line"><span class="num">15</span><span class="content">            thinking_config=types.ThinkingConfig(thinking_budget=0),</span></span>
+<span class="line"><span class="num">16</span><span class="content">            system_instruction=[types.Part.from_text(text=self.sys_prompt)],</span></span>
+<span class="line"><span class="num">17</span><span class="content">        )</span></span>
+
+<span class="line"><span class="num">18</span><span class="content">    async def think(self, input_text: str) -> str:</span></span>
+<span class="line"><span class="num">19</span><span class="content">        contents = [</span></span>
+<span class="line"><span class="num">20</span><span class="content">            types.Content(</span></span>
+<span class="line"><span class="num">21</span><span class="content">                role="user",</span></span>
+<span class="line"><span class="num">22</span><span class="content">                parts=[types.Part.from_text(text=input_text)],</span></span>
+<span class="line"><span class="num">23</span><span class="content">            )</span></span>
+<span class="line"><span class="num">24</span><span class="content">        ]</span></span>
+<span class="line"><span class="num">25</span><span class="content">        response = ""</span></span>
+<span class="line"><span class="num">26</span><span class="content">        stream = await self.client.aio.models.generate_content_stream(</span></span>
+<span class="line"><span class="num">27</span><span class="content">            model=self.model,</span></span>
+<span class="line"><span class="num">28</span><span class="content">            contents=contents,</span></span>
+<span class="line"><span class="num">29</span><span class="content">            config=self._config,</span></span>
+<span class="line"><span class="num">30</span><span class="content">        )</span></span>
+<span class="line"><span class="num">31</span><span class="content">        async for chunk in stream:</span></span>
+<span class="line"><span class="num">32</span><span class="content">            if chunk.text:</span></span>
+<span class="line"><span class="num">33</span><span class="content">                print(chunk.text, end="", flush=True)</span></span>
+<span class="line"><span class="num">34</span><span class="content">                response += chunk.text</span></span>
+<span class="line"><span class="num">35</span><span class="content">        print()</span></span>
+<span class="line"><span class="num">36</span><span class="content">        self.memory.append((input_text, response))</span></span>
+<span class="line"><span class="num">37</span><span class="content">        return response</span></span>
+
+<span class="line"><span class="num">41</span><span class="content"># ── Agent Roles ───────────────────────────────────────────────────────────────</span></span>
+<span class="line"><span class="num">42</span><span class="content">class Debater(BaseAgent):</span></span>
+<span class="line"><span class="num">43</span><span class="content">    def __init__(self, name: str, stance: str):</span></span>
+<span class="line"><span class="num">44</span><span class="content">        super().__init__(</span></span>
+<span class="line"><span class="num">45</span><span class="content">            name,</span></span>
+<span class="line"><span class="num">46</span><span class="content">            f"You are {name}. You firmly believe: {stance}. "</span></span>
+<span class="line"><span class="num">47</span><span class="content">            "State your position in 3 sharp sentences. No hedging.",</span></span>
+<span class="line"><span class="num">48</span><span class="content">        )</span></span>
+
+<span class="line"><span class="num">52</span><span class="content">class Critic(BaseAgent):</span></span>
+<span class="line"><span class="num">53</span><span class="content">    def __init__(self, name: str):</span></span>
+<span class="line"><span class="num">54</span><span class="content">        super().__init__(</span></span>
+<span class="line"><span class="num">55</span><span class="content">            name,</span></span>
+<span class="line"><span class="num">56</span><span class="content">            f"You are {name}, a sharp cross-examiner. "</span></span>
+<span class="line"><span class="num">57</span><span class="content">            "You will be given an opponent's argument. "</span></span>
+<span class="line"><span class="num">58</span><span class="content">            "Identify its weakest point and attack it in 2 sentences.",</span></span>
+<span class="line"><span class="num">59</span><span class="content">        )</span></span>
+
+<span class="line"><span class="num">63</span><span class="content">class Judge(BaseAgent):</span></span>
+<span class="line"><span class="num">64</span><span class="content">    def __init__(self):</span></span>
+<span class="line"><span class="num">65</span><span class="content">        super().__init__(</span></span>
+<span class="line"><span class="num">66</span><span class="content">            "Judge",</span></span>
+<span class="line"><span class="num">67</span><span class="content">            "You are an impartial judge. "</span></span>
+<span class="line"><span class="num">68</span><span class="content">            "You will receive two positions and two critiques. "</span></span>
+<span class="line"><span class="num">69</span><span class="content">            "Weigh the arguments. Pick the stronger side. "</span></span>
+<span class="line"><span class="num">70</span><span class="content">            "State your verdict and reasoning in 3 sentences. "</span></span>
+<span class="line"><span class="num">71</span><span class="content">            "Do not sit on the fence.",</span></span>
+<span class="line"><span class="num">72</span><span class="content">        )</span></span>
+
+<span class="line"><span class="num">75</span><span class="content"># ── Stage 1 — Fan‑Out: Parallel Positions ────────────────────────────────</span></span>
+<span class="line"><span class="num">76</span><span class="content">async def opening_positions(topic: str, debater_a: Debater, debater_b: Debater) -> tuple[str, str]:</span></span>
+<span class="line"><span class="num">77</span><span class="content">    print(f"\n{'='*60}")</span></span>
+<span class="line"><span class="num">78</span><span class="content">    print(f"TOPIC: {topic}")</span></span>
+<span class="line"><span class="num">79</span><span class="content">    print(f"{'='*60}")</span></span>
+<span class="line"><span class="num">80</span><span class="content">    print("\n[Stage 1] Opening positions …\n")</span></span>
+<span class="line"><span class="num">81</span><span class="content">    async def speak(agent: Debater) -> str:</span></span>
+<span class="line"><span class="num">82</span><span class="content">        print(f"\n── {agent.name} ──")</span></span>
+<span class="line"><span class="num">83</span><span class="content">        return await agent.think(f"State your position on: {topic}")</span></span>
+<span class="line"><span class="num">84</span><span class="content">    position_a, position_b = await asyncio.gather(</span></span>
+<span class="line"><span class="num">85</span><span class="content">        speak(debater_a),</span></span>
+<span class="line"><span class="num">86</span><span class="content">        speak(debater_b),</span></span>
+<span class="line"><span class="num">87</span><span class="content">    )</span></span>
+<span class="line"><span class="num">88</span><span class="content">    return position_a, position_b</span></span>
+
+<span class="line"><span class="num">95</span><span class="content"># ── Stage 2 — Cross‑Critique: Each Attacks the Other ─────────────────────</span></span>
+<span class="line"><span class="num">96</span><span class="content">async def cross_critique(</span></span>
+<span class="line"><span class="num">97</span><span class="content">    debater_a: Debater, position_a: str,</span></span>
+<span class="line"><span class="num">98</span><span class="content">    debater_b: Debater, position_b: str,</span></span>
+<span class="line"><span class="num">99</span><span class="content">) -> tuple[str, str]:</span></span>
+<span class="line"><span class="num">100</span><span class="content">    print("\n[Stage 2] Cross-critique …\n")</span></span>
+<span class="line"><span class="num">101</span><span class="content">    critic_a = Critic(f"{debater_a.name} (cross-examining)")</span></span>
+<span class="line"><span class="num">102</span><span class="content">    critic_b = Critic(f"{debater_b.name} (cross-examining)")</span></span>
+<span class="line"><span class="num">103</span><span class="content">    async def attack(critic: Critic, opponent_name: str, opponent_position: str) -> str:</span></span>
+<span class="line"><span class="num">104</span><span class="content">        print(f"\n── {critic.name} ──")</span></span>
+<span class="line"><span class="num">105</span><span class="content">        return await critic.think(f"{opponent_name} argued: {opponent_position}")</span></span>
+<span class="line"><span class="num">106</span><span class="content">    critique_by_a, critique_by_b = await asyncio.gather(</span></span>
+<span class="line"><span class="num">107</span><span class="content">        attack(critic_a, debater_b.name, position_b),</span></span>
+<span class="line"><span class="num">108</span><span class="content">        attack(critic_b, debater_a.name, position_a),</span></span>
+<span class="line"><span class="num">109</span><span class="content">    )</span></span>
+<span class="line"><span class="num">110</span><span class="content">    return critique_by_a, critique_by_b</span></span>
+
+<span class="line"><span class="num">119</span><span class="content"># ── Stage 3 — Fan‑In: Judge Decides ───────────────────────────────────────</span></span>
+<span class="line"><span class="num">120</span><span class="content">async def verdict(</span></span>
+<span class="line"><span class="num">121</span><span class="content">    debater_a: Debater, position_a: str, critique_by_b: str,</span></span>
+<span class="line"><span class="num">122</span><span class="content">    debater_b: Debater, position_b: str, critique_by_a: str,</span></span>
+<span class="line"><span class="num">123</span><span class="content">) -> str:</span></span>
+<span class="line"><span class="num">124</span><span class="content">    print("\n[Stage 3] Verdict …\n")</span></span>
+<span class="line"><span class="num">125</span><span class="content">    judge = Judge()</span></span>
+<span class="line"><span class="num">126</span><span class="content">    prompt = (</span></span>
+<span class="line"><span class="num">127</span><span class="content">        f"{debater_a.name} argued:\n{position_a}\n\n"</span></span>
+<span class="line"><span class="num">128</span><span class="content">        f"{debater_b.name} cross-examined {debater_a.name}:\n{critique_by_b}\n\n"</span></span>
+<span class="line"><span class="num">129</span><span class="content">        f"{debater_b.name} argued:\n{position_b}\n\n"</span></span>
+<span class="line"><span class="num">130</span><span class="content">        f"{debater_a.name} cross-examined {debater_b.name}:\n{critique_by_a}\n\n"</span></span>
+<span class="line"><span class="num">131</span><span class="content">        "Render your verdict."</span></span>
+<span class="line"><span class="num">132</span><span class="content">    )</span></span>
+<span class="line"><span class="num">133</span><span class="content">    print("── Judge ──")</span></span>
+<span class="line"><span class="num">134</span><span class="content">    return await judge.think(prompt)</span></span>
+
+<span class="line"><span class="num">141</span><span class="content"># ── Main ────────────────────────────────────────────────────────────────────</span></span>
+<span class="line"><span class="num">142</span><span class="content">async def main():</span></span>
+<span class="line"><span class="num">143</span><span class="content">    topic = "AI will eliminate more jobs than it creates in the next decade"</span></span>
+<span class="line"><span class="num">144</span><span class="content">    debater_a = Debater("Arjun", "AI is a net job destroyer — history will not repeat itself this time")</span></span>
+<span class="line"><span class="num">145</span><span class="content">    debater_b = Debater("Meera", "AI is a net job creator — every technology wave has expanded human work")</span></span>
+<span class="line"><span class="num">146</span><span class="content">    position_a, position_b = await opening_positions(topic, debater_a, debater_b)</span></span>
+<span class="line"><span class="num">147</span><span class="content">    critique_by_a, critique_by_b = await cross_critique(debater_a, position_a, debater_b, position_b)</span></span>
+<span class="line"><span class="num">148</span><span class="content">    final_verdict = await verdict(debater_a, position_a, critique_by_b, debater_b, position_b, critique_by_a)</span></span>
+<span class="line"><span class="num">149</span><span class="content">    print("\n" + "="*60)</span></span>
+<span class="line"><span class="num">150</span><span class="content">    print("VERDICT")</span></span>
+<span class="line"><span class="num">151</span><span class="content">    print("="*60)</span></span>
+<span class="line"><span class="num">152</span><span class="content">    print(final_verdict)</span></span>
+
+<span class="line"><span class="num">170</span><span class="content">import nest_asyncio</span></span>
+<span class="line"><span class="num">171</span><span class="content">nest_asyncio.apply()</span></span>
+<span class="line"><span class="num">172</span><span class="content">if __name__ == "__main__":</span></span>
+<span class="line"><span class="num">173</span><span class="content">    asyncio.run(main())</span></span>
+      </pre>
+    </div>
+    <!-- Explanation Column -->
+    <div class="explanation-column">
+      <h2>Understanding the Debate Pattern</h2>
+      <p>
+        This example implements a three‑stage debate between two agents.
+        Agents adopt different roles — debater, critic, and judge — to
+        challenge each other and arrive at a verdict. By staging the
+        interaction into opening statements, cross‑examination, and
+        judgement, the conversation surfaces richer reasoning than a
+        single‑turn exchange.
+      </p>
+
+      <h3>BaseAgent</h3>
+      <p>
+        Lines&nbsp;7‑17 define a reusable <code>BaseAgent</code> class. It
+        stores an agent’s <em>name</em>, a system prompt (<em>sys_prompt</em>),
+        conversation memory, and a Gemini client configured with a
+        thinking budget of zero (no internal chain of thought). The
+        <code>think()</code> method (lines&nbsp;18‑37) constructs a
+        single message from the user, streams the model’s response to
+        stdout, accumulates the text, and appends the interaction to
+        the agent’s memory. Returning the response allows higher‑level
+        functions to capture what the agent said.
+      </p>
+
+      <h3>Debater, Critic and Judge roles</h3>
+      <p>
+        Three subclasses implement specific roles:
+      </p>
+      <ul>
+        <li><strong>Debater</strong> (lines&nbsp;42‑48) accepts a
+          <code>stance</code> and sets the system prompt so the model
+          firmly advocates that position in exactly three sentences,
+          avoiding hedging.</li>
+        <li><strong>Critic</strong> (lines&nbsp;52‑59) is a cross‑examiner.
+          Its prompt instructs the model to identify the weakest point in
+          an opponent’s argument and attack it in two sentences.</li>
+        <li><strong>Judge</strong> (lines&nbsp;63‑72) weighs both sides. Its
+          prompt explains that it will receive two positions and two
+          critiques, and must render a verdict in three sentences
+          without sitting on the fence.</li>
+      </ul>
+
+      <h3>Stage&nbsp;1 – Opening Positions</h3>
+      <p>
+        The <code>opening_positions()</code> coroutine (lines&nbsp;76‑88)
+        kicks off the debate. It prints the topic and then defines an
+        inner <code>speak()</code> function that asks each debater to
+        state their position on that topic. The two debaters speak
+        concurrently via <code>asyncio.gather()</code>, illustrating the
+        fan‑out pattern: multiple agents can think at the same time. The
+        function returns a tuple of the two positions.
+      </p>
+
+      <h3>Stage&nbsp;2 – Cross‑Critique</h3>
+      <p>
+        In <code>cross_critique()</code> (lines&nbsp;96‑110), each debater
+        creates a temporary <code>Critic</code> to attack their opponent’s
+        opening statement. Two <code>attack()</code> coroutines run in
+        parallel: debater A’s critic critiques debater B’s position,
+        and vice versa. This stage demonstrates concurrent criticism and
+        returns both critiques.
+      </p>
+
+      <h3>Stage&nbsp;3 – Verdict</h3>
+      <p>
+        The <code>verdict()</code> function (lines&nbsp;120‑134) lets a
+        <code>Judge</code> evaluate everything that came before. It
+        builds a long prompt containing both positions and both critiques,
+        separated with clear labels. The judge is then asked to render a
+        verdict. The returned string contains the judge’s final decision
+        along with reasoning.
+      </p>
+
+      <h3>Main Function</h3>
+      <p>
+        Finally, <code>main()</code> (lines&nbsp;142‑152) wires the stages
+        together. It defines a topic and two debaters with opposing
+        stances, gathers their opening positions, orchestrates the
+        cross‑critique, asks for a verdict, and prints the final
+        judgement. The <code>nest_asyncio.apply()</code> call (lines&nbsp;170‑171)
+        enables running asynchronous code in a Jupyter environment, and
+        <code>asyncio.run(main())</code> executes the debate when the
+        script runs as the main module.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
