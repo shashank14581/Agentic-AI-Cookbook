@@ -1,0 +1,282 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 3: Moderated Conversations Explained</title>
+  <style>
+    body {
+      background: #EFF6FF;
+      color: #1e293b;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    header {
+      background: linear-gradient(to right, #38bdf8, #a5b4fc);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .summary {
+      background: #F0F9FF;
+      border-left: 5px solid #38BDF8;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+
+    .summary h2 {
+      margin-top: 0;
+    }
+
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .code-block pre {
+      background: #EEF2FF;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1e293b;
+    }
+
+    .code-block pre span {
+      display: block;
+    }
+
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #64748b;
+    }
+
+    .explanation p {
+      margin-bottom: 20px;
+      background: #FEF9FF;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #C084FC;
+    }
+
+    .explanation strong {
+      color: #7C3AED;
+    }
+
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 3: Moderated Conversations</h1>
+    <p>This pattern introduces a moderator agent that decides which participant should speak next in a multi‑agent chat.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>A moderator agent acts as the brain of the conversation. Each specialized agent (human, god, dog, philosopher) uses the base agent logic for memory, facts and conversation context. The moderator reads the last message and decides which agent should reply by returning one word (e.g.&nbsp;“Dog”). The orchestrator then routes the message to the selected agent, enabling dynamic and non‑linear dialogues.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span># Base Agent</span>
+<span>class BaseAgent():</span>
+<span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash-lite"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.memory = []</span>
+<span>        self.facts_store = []</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+
+<span>    def build_context(self, input_text):</span>
+<span>        history = ""</span>
+<span>        for inp, out in self.memory[-3:]:</span>
+<span>            history += f"user: {inp}\nsystem: {out}\n"</span>
+<span>        facts_text = "\n".join(self.facts_store)</span>
+<span>        return f"""</span>
+<span>FACTS:</span>
+<span>{facts_text}</span>
+<span></span>
+<span>HISTORY:</span>
+<span>{history}</span>
+<span></span>
+<span>NEW MESSAGE:</span>
+<span>{input_text}</span>
+<span>"""</span>
+
+<span>    def extract_facts(self, input_text):</span>
+<span>        if "I am" in input_text or "I like" in input_text:</span>
+<span>            if input_text not in self.facts_store:</span>
+<span>                self.facts_store.append(input_text)</span>
+
+<span>    def think(self, input_text):</span>
+<span>        self.extract_facts(input_text)</span>
+<span>        full_input = self.build_context(input_text)</span>
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=full_input)]</span>
+<span>            )</span>
+<span>        ]</span>
+<span>        config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span>
+<span>        )</span>
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
+<span>        ):</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="")</span>
+<span>                response += chunk.text</span>
+<span>        print()</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+
+<span># Agents</span>
+<span>class Human(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a human. Talk naturally and casually."
+<span>        )</span>
+
+<span>class God(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a Hindu God. Be divine, wise, slightly playful."
+<span>        )</span>
+
+<span>class Dog(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a dog. Be funny, emotional, loyal, slightly chaotic."
+<span>        )</span>
+
+<span>class Philosopher(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a philosopher. Be deep, abstract, reflective."
+<span>        )</span>
+
+<span># Moderator (THE BRAIN)</span>
+<span>class Moderator(BaseAgent):</span>
+<span>    def __init__(self):</span>
+<span>        super().__init__(</span>
+<span>            "Moderator",</span>
+<span>            """
+<span>You are a moderator.</span>
+<span></span>
+<span>Decide:</span>
+<span>- Which agent should respond</span>
+<span></span>
+<span>Options:</span>
+<span>- Human</span>
+<span>- God</span>
+<span>- Dog</span>
+<span>- Philosopher</span>
+<span></span>
+<span>Return ONLY one word.</span>
+<span>"""
+        )
+
+<span>    def decide(self, input_text):</span>
+<span>        decision = self.think(input_text)</span>
+<span>        decision = decision.strip().lower()</span>
+<span>        if "god" in decision:</span>
+<span>            return "God"</span>
+<span>        elif "dog" in decision:</span>
+<span>            return "Dog"</span>
+<span>        elif "philosopher" in decision:</span>
+<span>            return "Philosopher"</span>
+<span>        else:</span>
+<span>            return "Human"</span>
+
+<span># Orchestrator</span>
+<span>def orchestrate(agents, moderator, turns=6):</span>
+<span>    message = "Hi Indra, what is life?"</span>
+<span>    for _ in range(turns):</span>
+<span>        print("\n--- Moderator deciding ---")</span>
+<span>        decision = moderator.decide(message)</span>
+<span>        print(f"\n[Selected Agent]: {decision}\n")</span>
+<span>        if decision == "God":</span>
+<span>            agent = agents["God"]</span>
+<span>        elif decision == "Dog":</span>
+<span>            agent = agents["Dog"]</span>
+<span>        elif decision == "Philosopher":</span>
+<span>            agent = agents["Philosopher"]</span>
+<span>        else:</span>
+<span>            agent = agents["Human"]</span>
+<span>        print(f"{agent.name}: ", end="")</span>
+<span>        output = agent.think(message)</span>
+<span>        message = output</span>
+
+<span># Main</span>
+<span>if __name__ == "__main__":</span>
+<span>    human = Human("Shashank")</span>
+<span>    god = God("Indra")</span>
+<span>    dog = Dog("Buddy")</span>
+<span>    philosopher = Philosopher("Socrates")</span>
+<span>    moderator = Moderator()</span>
+<span>    agents = {</span>
+<span>        "Human": human,</span>
+<span>        "God": god,</span>
+<span>        "Dog": dog,</span>
+<span>        "Philosopher": philosopher</span>
+<span>    }</span>
+<span>    orchestrate(agents, moderator)</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>Lines&nbsp;1–3:</strong> Import required modules including the Gemini client. This file builds upon the base agent defined in the previous pattern.</p>
+        <p><strong>Lines&nbsp;5–69:</strong> Define the <code>BaseAgent</code> as before, supporting memory, facts extraction and context building. Each agent inherits this functionality.</p>
+        <p><strong>Lines&nbsp;72–104:</strong> Define four specialized agents: <code>Human</code>, <code>God</code>, <code>Dog</code> and <code>Philosopher</code>. Each sets a different system prompt, giving them distinct personalities.</p>
+        <p><strong>Lines&nbsp;107–143:</strong> Introduce the <code>Moderator</code> class. Its system prompt instructs it to decide which agent should respond. The <code>decide()</code> method calls <code>think()</code> on the incoming message and interprets the output to select an agent.</p>
+        <p><strong>Lines&nbsp;146–170:</strong> The <code>orchestrate()</code> function uses the moderator to route messages. It prints which agent is selected, then calls that agent’s <code>think()</code> method to get a response. The response becomes the next message for the moderator to consider.</p>
+        <p><strong>Lines&nbsp;173–190:</strong> In the main block, create each agent and the moderator, pack them into a dictionary, and kick off the moderated conversation for six turns. The moderator introduces non‑deterministic ordering by choosing who speaks next.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
