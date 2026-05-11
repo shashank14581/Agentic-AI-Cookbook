@@ -3,7 +3,655 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agentic AI Pattern Website</title>
+  <title>Agentic AI Cookbook for Beginners</title><!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Agentic AI Cookbook for Beginners</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      line-height: 1.7;
+    }
+
+    header {
+      padding: 90px 10%;
+      background: linear-gradient(135deg, #2563eb, #7c3aed, #ec4899);
+      color: white;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+      font-weight: 900;
+    }
+
+    header p {
+      max-width: 900px;
+      margin: auto;
+      font-size: 1.15rem;
+      color: #f8fafc;
+    }
+
+    .hero-badges {
+      margin-top: 30px;
+    }
+
+    .hero-badges span {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      padding: 8px 14px;
+      border-radius: 999px;
+      margin: 6px;
+      font-weight: 800;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: white;
+      padding: 16px 10%;
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    }
+
+    nav a {
+      color: #2563eb;
+      text-decoration: none;
+      margin-right: 22px;
+      font-weight: 800;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      color: #ec4899;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: auto;
+      padding: 60px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    h2 {
+      font-size: 2.4rem;
+      color: #0f172a;
+      margin-bottom: 24px;
+    }
+
+    h3 {
+      font-size: 1.35rem;
+      margin-bottom: 12px;
+      color: #1e3a8a;
+    }
+
+    p {
+      color: #475569;
+      margin-bottom: 14px;
+    }
+
+    ul,
+    ol {
+      margin-left: 24px;
+      margin-bottom: 18px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    code {
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+
+    .section-title span {
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .api-grid,
+    .script-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px;
+    }
+
+    .step-card,
+    .script-card {
+      background: white;
+      border-radius: 22px;
+      padding: 26px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .step-number {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      color: white;
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .index-panel {
+      background: linear-gradient(135deg, #ecfeff, #eff6ff, #fdf2f8);
+      border: 1px solid #bfdbfe;
+      border-radius: 30px;
+      padding: 32px;
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.12);
+    }
+
+    .index-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .index-item {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+
+    .index-code {
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: white;
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .index-item h4 {
+      color: #0f172a;
+      margin-bottom: 4px;
+      font-size: 1rem;
+    }
+
+    .index-item p {
+      margin-bottom: 10px;
+      font-size: 0.92rem;
+      color: #64748b;
+    }
+
+    .open-pattern-link {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #2563eb, #ec4899);
+      color: white;
+      text-decoration: none;
+      font-weight: 900;
+      font-size: 0.82rem;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+      transition: 0.2s ease;
+    }
+
+    .open-pattern-link:hover {
+      transform: translateY(-2px);
+      opacity: 0.94;
+    }
+
+    .pattern-board {
+      display: grid;
+      gap: 30px;
+    }
+
+    .pattern-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 1fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .pattern-number {
+      background: linear-gradient(135deg, #f97316, #ec4899);
+      color: white;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(236, 72, 153, 0.25);
+    }
+
+    .pattern-main,
+    .pattern-explain {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .pattern-main {
+      border-top: 6px solid #38bdf8;
+    }
+
+    .pattern-explain {
+      border-top: 6px solid #a855f7;
+      background: #faf5ff;
+    }
+
+    .label {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .explain-label {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .final-box {
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      color: white;
+      padding: 40px;
+      border-radius: 28px;
+      box-shadow: 0 18px 40px rgba(30, 64, 175, 0.25);
+    }
+
+    .final-box p {
+      color: #f8fafc;
+    }
+
+    footer {
+      text-align: center;
+      padding: 42px 20px;
+      background: #0f172a;
+      color: #cbd5e1;
+    }
+
+    @media (max-width: 850px) {
+
+      header h1 {
+        font-size: 2.4rem;
+      }
+
+      nav {
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .pattern-row {
+        grid-template-columns: 1fr;
+      }
+
+      .pattern-number {
+        height: 80px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Agentic AI Pattern Website</h1>
+
+    <p>
+      A practical guide to building agentic AI systems using Gemini,
+      orchestration, memory, tools, retrieval, RAG, MCP servers,
+      and multi-agent reasoning architectures.
+    </p>
+
+    <div class="hero-badges">
+      <span>Agents</span>
+      <span>Memory</span>
+      <span>RAG</span>
+      <span>Tools</span>
+      <span>MCP</span>
+      <span>Orchestration</span>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#api-key">API Key</a>
+    <a href="#index">Repository Index</a>
+    <a href="#scripts">How to Read</a>
+    <a href="#patterns">Pattern Views</a>
+    <a href="#final">Final Thoughts</a>
+  </nav>
+
+  <main>
+
+    <section id="api-key">
+
+      <div class="section-title">
+        <span>SETUP</span>
+        <h2>Getting a Gemini API Key</h2>
+      </div>
+
+      <div class="api-grid">
+
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Sign in to AI Studio</h3>
+          <p>Go to Google AI Studio and log in with your Google account.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Open API Keys</h3>
+          <p>Select <strong>API Keys</strong> from the left navigation panel.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Create an API Key</h3>
+          <p>Click <strong>Get API Key</strong> and connect a Google Cloud project.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <h3>Store Securely</h3>
+          <p>Save the key in environment variables or configuration files.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="index">
+
+      <div class="section-title">
+        <span>INDEX</span>
+        <h2>Repository Index</h2>
+      </div>
+
+      <div class="index-panel">
+
+        <p>
+          Each script introduces one new mental model. Read them in sequence
+          to understand how modern agentic systems evolve from simple prompts
+          into orchestration architectures.
+        </p>
+
+        <div class="index-grid">
+
+          <!-- EXAMPLE -->
+
+          <div class="index-item">
+            <span class="index-code">1</span>
+            <div>
+              <h4>CreatingTalkingAgents.py</h4>
+              <p>Basic talking agents and orchestration.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">2</span>
+            <div>
+              <h4>Agents with Personality and Memory</h4>
+              <p>Identity, memory, and fact extraction.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">3</span>
+            <div>
+              <h4>Which and When Should One Speak</h4>
+              <p>Moderator controls conversation routing.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">4</span>
+            <div>
+              <h4>Agents Using Tools</h4>
+              <p>Tool-calling agents using external functions.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">5</span>
+            <div>
+              <h4>Agents Who Return JSON</h4>
+              <p>Structured outputs and machine-readable reasoning.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">6</span>
+            <div>
+              <h4>Reasoning Agents & Handoff</h4>
+              <p>Agents reason and route control dynamically.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">7</span>
+            <div>
+              <h4>Supervisor Pattern</h4>
+              <p>Supervisor routes work to specialist agents.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">8</span>
+            <div>
+              <h4>Parallel Agents</h4>
+              <p>Fan-out and fan-in reasoning systems.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9</span>
+            <div>
+              <h4>Debate Pattern</h4>
+              <p>Competing agents and judge evaluation.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9a</span>
+            <div>
+              <h4>Long-Term Memory</h4>
+              <p>Persistent database-backed memory systems.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9b</span>
+            <div>
+              <h4>Shared Memory</h4>
+              <p>Collaborative multi-agent memory architecture.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9c</span>
+            <div>
+              <h4>Knowledge Extraction</h4>
+              <p>Transform text into structured entities.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9d</span>
+            <div>
+              <h4>Chunking & Embedding</h4>
+              <p>Prepare documents for semantic retrieval.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9e</span>
+            <div>
+              <h4>Vector Search Before Generation</h4>
+              <p>Retrieve vectors before answering.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9f</span>
+            <div>
+              <h4>Basic RAG Agent</h4>
+              <p>Retrieval-augmented generation basics.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9g</span>
+            <div>
+              <h4>Agentic RAG</h4>
+              <p>Agent decides when retrieval is needed.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9h</span>
+            <div>
+              <h4>Multi-hop Retrieval</h4>
+              <p>Retrieval across multiple reasoning steps.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9i</span>
+            <div>
+              <h4>MCP Protocol Walkthrough</h4>
+              <p>Understanding the Model Context Protocol.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9j</span>
+            <div>
+              <h4>Connecting to an MCP Server</h4>
+              <p>Client-side MCP communication.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9k</span>
+            <div>
+              <h4>Creating Your Own Tool Server</h4>
+              <p>Build custom MCP-powered servers.</p>
+            </div>
+          </div>
+
+          <div class="index-item">
+            <span class="index-code">9l</span>
+            <div>
+              <h4>Agent + MCP Full Integration</h4>
+              <p>End-to-end architecture with MCP tools.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Built as a learning guide for Agentic AI systems.</p>
+  </footer>
+
+  <script>
+
+    const patternFiles = {
+      "1": "pattern1.html",
+      "2": "pattern2.html",
+      "3": "pattern3.html",
+      "4": "pattern4.html",
+      "5": "pattern5.html",
+      "6": "pattern6.html",
+      "7": "pattern7.html",
+      "8": "pattern8.html",
+      "9": "pattern9.html",
+      "9a": "pattern9a.html",
+      "9b": "pattern9b.html",
+      "9c": "pattern9c.html",
+      "9d": "pattern9d.html",
+      "9e": "pattern9e.html",
+      "9f": "pattern9f.html",
+      "9g": "pattern9g.html",
+      "9h": "pattern9h.html",
+      "9i": "pattern9i.html",
+      "9j": "pattern9j.html",
+      "9k": "pattern9k.html",
+      "9l": "pattern9l.html"
+    };
+
+    document.querySelectorAll(".index-item").forEach(item => {
+
+      const code = item.querySelector(".index-code")?.textContent.trim();
+      const contentBox = item.querySelector("div");
+
+      if (code && patternFiles[code] && contentBox) {
+
+        const link = document.createElement("a");
+
+        link.href = patternFiles[code];
+        link.textContent = "Open full explanation";
+        link.className = "open-pattern-link";
+
+        contentBox.appendChild(link);
+      }
+    });
+
+  </script>
+
+</body>
+
+</html>
 
   <style>
     * {
