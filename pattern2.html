@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 2: Personality and Memory Explained</title>
+  <style>
+    /* Base styling for the page */
+    body {
+      background: #FEF9F1;
+      color: #1e293b;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: linear-gradient(to right, #fbbf24, #a78bfa);
+      padding: 40px 20px;
+      text-align: center;
+      color: #ffffff;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .summary {
+      background: #FFFBEB;
+      border-left: 5px solid #FBBF24;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+
+    .summary h2 {
+      margin-top: 0;
+    }
+
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .code-block pre {
+      background: #FFF7ED;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1e293b;
+    }
+
+    .code-block pre span {
+      display: block;
+    }
+
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #6b7280;
+    }
+
+    .explanation p {
+      margin-bottom: 20px;
+      background: #F0FDF4;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #34D399;
+    }
+
+    .explanation strong {
+      color: #059669;
+    }
+
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 2: Personality and Memory</h1>
+    <p>This pattern introduces memory and personality to agents, enabling them to remember facts and speak with character.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>The <code>BaseAgent</code> gains a facts store and a context builder. Before sending input to Gemini, the agent extracts sentences like “I am ...” or “I like ...” and stores them as long‑term facts. When generating a response, the agent constructs a prompt that includes both its facts and the last few interactions, giving the model a richer context. Specialized agents such as a human and a god demonstrate how different system prompts yield different personalities.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span>class BaseAgent():</span>
+<span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash-lite"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.memory = []</span>
+<span>        self.facts_store = []</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+
+<span>    def build_context(self, input_text):</span>
+<span>        history = ""</span>
+<span>        for inp, out in self.memory[-3:]:</span>
+<span>            history += f"user: {inp}\nsystem: {out}\n"</span>
+
+<span>        facts_text = "\n".join(self.facts_store)</span>
+
+<span>        full_input = f"""</span>
+<span>FACTS:</span>
+<span>{facts_text}</span>
+<span></span>
+<span>HISTORY:</span>
+<span>{history}</span>
+<span></span>
+<span>NEW MESSAGE:</span>
+<span>{input_text}</span>
+<span>"""</span>
+<span>        return full_input</span>
+
+<span>    def extract_facts(self, input_text):</span>
+<span>        if "I am" in input_text or "I like" in input_text:</span>
+<span>            if input_text not in self.facts_store:</span>
+<span>                self.facts_store.append(input_text)</span>
+
+<span>    def think(self, input_text):</span>
+<span>        self.extract_facts(input_text)</span>
+<span>        full_input = self.build_context(input_text)</span>
+
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=full_input)]</span>
+<span>            )</span>
+<span>        ]</span>
+
+<span>        config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span>
+<span>        )</span>
+
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
+<span>        ):</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="")</span>
+<span>                response += chunk.text</span>
+
+<span>        print()</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+
+<span>class Human(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a human. Talk naturally and casually."</span>
+<span>        )</span>
+
+<span>class God(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a Hindu God. Be divine, wise, slightly playful."</span>
+<span>        )</span>
+
+<span>def orchestrate(human, god, turns=5):</span>
+<span>    message = "Hi Indra!"</span>
+<span>    for _ in range(turns):</span>
+<span>        print(f"\n{human.name}: ", end="")</span>
+<span>        human_out = human.think(message)</span>
+<span>        print(f"\n{god.name}: ", end="")</span>
+<span>        god_out = god.think(human_out)</span>
+<span>        message = god_out</span>
+
+<span>if __name__ == "__main__":</span>
+<span>    human = Human("Shashank")</span>
+<span>    god = God("Indra")</span>
+<span>    orchestrate(human, god)</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>Lines&nbsp;1–3:</strong> Import <code>os</code> and the <code>genai</code> modules. These provide access to the Gemini client and type definitions.</p>
+        <p><strong>Lines&nbsp;5–13:</strong> Initialize the <code>BaseAgent</code>. In addition to the memory list, this pattern introduces a <code>facts_store</code> to persist facts extracted from the conversation. A client is created with the Gemini API key.</p>
+        <p><strong>Lines&nbsp;14–32:</strong> Define <code>build_context()</code>, which composes a prompt including the stored facts, the last three interaction pairs, and the new message. The triple‑quoted string clearly separates these sections.</p>
+        <p><strong>Lines&nbsp;34–38:</strong> Define <code>extract_facts()</code>. If the incoming message contains “I am” or “I like” and it has not been stored before, the sentence is appended to <code>facts_store</code>. This creates a long‑term memory of facts.</p>
+        <p><strong>Lines&nbsp;39–71:</strong> Override the <code>think()</code> method. The agent extracts facts, builds a context that includes history and facts, then sends it to Gemini. The response is printed and appended to memory.</p>
+        <p><strong>Lines&nbsp;74–87:</strong> Define the <code>Human</code> and <code>God</code> subclasses. Each passes a personalized system prompt to the parent initializer, giving distinct conversational styles.</p>
+        <p><strong>Lines&nbsp;90–100:</strong> Implement <code>orchestrate()</code>, alternating messages between the human and the god. It starts with “Hi Indra!” and updates the message at each turn with the response from the previous agent.</p>
+        <p><strong>Lines&nbsp;103–107:</strong> The entry point creates the two agents and launches a five‑turn conversation. Over the course of the dialogue, the agents remember facts about themselves and speak with their unique personalities.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
