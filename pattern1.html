@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 1: Creating Talking Agents Explained</title>
+  <style>
+    /* Base styling for the page */
+    body {
+      background: #F7FEFF;
+      color: #1e293b;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: linear-gradient(to right, #60a5fa, #c084fc);
+      padding: 40px 20px;
+      text-align: center;
+      color: #ffffff;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .summary {
+      background: #ECFDF5;
+      border-left: 5px solid #34D399;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+
+    .summary h2 {
+      margin-top: 0;
+    }
+
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .code-block pre {
+      background: #F3F4F6;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1e293b;
+    }
+
+    .code-block pre span {
+      display: block;
+    }
+
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #6b7280;
+    }
+
+    .explanation p {
+      margin-bottom: 20px;
+      background: #FDF6E3;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #FBBF24;
+    }
+
+    .explanation strong {
+      color: #D97706;
+    }
+
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 1: Creating Talking Agents</h1>
+    <p>In this pattern, we build simple conversational agents using the Gemini API.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>This script defines a base class <code>BaseAgent</code> that uses the Gemini API to respond to user inputs. Two subclasses, <code>Human</code> and <code>Dog</code>, customize the system prompt to give the agents their roles. An <code>orchestrate()</code> function facilitates a conversation between a human and a dog for a specified number of turns.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span>os.environ["GEMINI_API_KEY"] = "your_api_key"</span>
+
+<span>class BaseAgent():</span>
+<span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash-lite"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.memory = []</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+
+<span>    def think(self, input_text):</span>
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=input_text)]</span>
+<span>            )</span>
+<span>        ]</span>
+
+<span>        config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(self.sys_prompt)]</span>
+<span>        )</span>
+
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
+<span>        ):</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="")</span>
+<span>                response += chunk.text</span>
+
+<span>        print()</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+
+<span>class Human(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, you are a human. Talk naturally."</span>
+<span>        )</span>
+
+<span>class Dog(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, you are a dog. Bark, be playful."</span>
+<span>        )</span>
+
+<span>def orchestrate(human, dog, turns=5):</span>
+<span>    message = "Hi Dog!"</span>
+<span>    for _ in range(turns):</span>
+<span>        print(f"\n{human.name}: ", end="")</span>
+<span>        human_out = human.think(message)</span>
+<span>        print(f"\n{dog.name}: ", end="")</span>
+<span>        dog_out = dog.think(human_out)</span>
+<span>        message = dog_out</span>
+
+<span>if __name__ == "__main__":</span>
+<span>    human = Human("Shashank")</span>
+<span>    dog = Dog("Bruno")</span>
+<span>    orchestrate(human, dog)</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>Lines&nbsp;1–3:</strong> Import the <code>os</code> module and Google’s <code>genai</code> package. The <code>genai</code> module provides the <code>Client</code> and types necessary to interact with the Gemini API.</p>
+        <p><strong>Line&nbsp;4:</strong> Set the API key environment variable. Replace <code>"your_api_key"</code> with your actual Gemini API key so that the client can authenticate.</p>
+        <p><strong>Lines&nbsp;7–13:</strong> Define the <code>BaseAgent</code> class. The initializer accepts a <code>name</code>, a system prompt, and a model name. It also creates a client to talk to Gemini and initializes an empty memory list.</p>
+        <p><strong>Lines&nbsp;15–42:</strong> The <code>think()</code> method builds the message content and configuration for the Gemini API. It streams the response chunk by chunk, prints it in real time, and collects the full response. Finally, it appends the conversation to memory and returns the response.</p>
+        <p><strong>Lines&nbsp;45–50:</strong> Define the <code>Human</code> class, a subclass of <code>BaseAgent</code>. It calls the parent initializer with a system prompt describing the human agent’s personality.</p>
+        <p><strong>Lines&nbsp;53–58:</strong> Define the <code>Dog</code> class similarly, with a system prompt instructing the agent to bark and be playful.</p>
+        <p><strong>Lines&nbsp;61–71:</strong> The <code>orchestrate()</code> function alternates between the human and the dog. It prints each agent’s name, calls their <code>think()</code> method with the current message, and passes the dog’s reply back into the loop for the next turn.</p>
+        <p><strong>Lines&nbsp;74–77:</strong> In the script’s entry point, create a <code>Human</code> named Shashank and a <code>Dog</code> named Bruno, then start a five‑turn conversation with <code>orchestrate()</code>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
