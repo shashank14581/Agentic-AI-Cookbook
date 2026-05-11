@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agentic AI Pattern Website</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      line-height: 1.7;
+    }
+
+    header {
+      padding: 80px 10%;
+      background: linear-gradient(135deg, #111827, #1e3a8a);
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: #ffffff;
+    }
+
+    header p {
+      max-width: 900px;
+      margin: auto;
+      font-size: 1.15rem;
+      color: #dbeafe;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #020617;
+      padding: 16px 10%;
+      border-bottom: 1px solid #334155;
+    }
+
+    nav a {
+      color: #93c5fd;
+      text-decoration: none;
+      margin-right: 20px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    nav a:hover {
+      color: #ffffff;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 50px 24px;
+    }
+
+    section {
+      margin-bottom: 70px;
+    }
+
+    h2 {
+      font-size: 2rem;
+      color: #ffffff;
+      margin-bottom: 20px;
+      border-left: 5px solid #60a5fa;
+      padding-left: 16px;
+    }
+
+    h3 {
+      font-size: 1.4rem;
+      color: #bfdbfe;
+      margin: 28px 0 12px;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: #cbd5e1;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 20px;
+    }
+
+    li {
+      margin-bottom: 10px;
+      color: #d1d5db;
+    }
+
+    code {
+      background: #1e293b;
+      color: #facc15;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    pre {
+      background: #020617;
+      color: #e5e7eb;
+      padding: 20px;
+      border-radius: 14px;
+      overflow-x: auto;
+      border: 1px solid #334155;
+      margin: 20px 0;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .card:hover {
+      border-color: #60a5fa;
+      transform: translateY(-2px);
+      transition: 0.25s ease;
+    }
+
+    .step {
+      background: #1e293b;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      border-left: 4px solid #38bdf8;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #1d4ed8;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      background: #020617;
+      border-top: 1px solid #334155;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2.2rem;
+      }
+
+      nav {
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      nav a {
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Agentic AI Pattern Website</h1>
+    <p>
+      Welcome to this guide on building agentic AI systems. This site explains how to generate your own API key,
+      navigate the repository of scripts, and understand the mental models behind each agentic pattern.
+    </p>
+  </header>
+
+  <nav>
+    <a href="#api-key">API Key</a>
+    <a href="#scripts">Read Scripts</a>
+    <a href="#patterns">Patterns</a>
+    <a href="#final">Final Thoughts</a>
+  </nav>
+
+  <main>
+
+    <section id="api-key">
+      <h2>Getting a Gemini API Key</h2>
+      <p>
+        To run any of these agents, you need an API key for Google Gemini. Follow these steps to create one in Google AI Studio.
+      </p>
+
+      <div class="step">
+        <h3>1. Sign in to AI Studio</h3>
+        <p>Go to Google AI Studio and log in with your Google account. AI Studio is where you manage Gemini API access and projects.</p>
+      </div>
+
+      <div class="step">
+        <h3>2. Open the API Keys Page</h3>
+        <p>Once inside, select <strong>API Keys</strong> from the left navigation panel.</p>
+      </div>
+
+      <div class="step">
+        <h3>3. Create an API Key</h3>
+        <p>Click <strong>Get API Key</strong>. Select an existing Google Cloud project or create a new one, then click <strong>Create API Key</strong>.</p>
+      </div>
+
+      <div class="step">
+        <h3>4. Copy the Key</h3>
+        <p>Copy your Gemini API key and store it securely. You will need it in your environment variables or configuration files.</p>
+      </div>
+    </section>
+
+    <section id="scripts">
+      <h2>How to Read the Scripts</h2>
+
+      <div class="card">
+        <h3>1. Identify the Agent Classes</h3>
+        <p>
+          Most scripts define a <code>BaseAgent</code> or specialized agent classes that wrap the Gemini API.
+          The simplest versions maintain conversation history and send prompts to Gemini.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>2. Read the Orchestration Logic</h3>
+        <p>
+          Functions such as <code>orchestrate()</code> or <code>run_conversation()</code> coordinate which agent speaks next
+          and handle message routing between agents.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>3. Observe Memory and Prompt Construction</h3>
+        <ul>
+          <li>Recent conversation summaries</li>
+          <li>Extracted facts</li>
+          <li>System prompts</li>
+          <li>Role-based formatting</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>4. Examine Tool Definitions</h3>
+        <p>
+          In scripts that use external tools or functions, the tools are declared using JSON schemas and passed to Gemini
+          during prompt construction.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>5. Check Return Types</h3>
+        <p>
+          Some agents force Gemini to return structured JSON instead of free-form text. This is useful for reliable workflows
+          and deterministic orchestration.
+        </p>
+      </div>
+    </section>
+
+    <section id="patterns">
+      <h2>Mental Models for Each Pattern</h2>
+
+      <div class="card">
+        <span class="tag">Pattern 1</span>
+        <h3>Basic Conversational Agents</h3>
+        <p>
+          A <code>BaseAgent</code> wraps the Gemini API and maintains conversation history. Two agents exchange messages through
+          an <code>orchestrate()</code> function.
+        </p>
+        <ul>
+          <li>Build a prompt from memory</li>
+          <li>Send it to Gemini</li>
+          <li>Receive a response</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 2</span>
+        <h3>Personality and Memory</h3>
+        <p>
+          This pattern stores facts about each character and uses both short-term and long-term memory during generation.
+        </p>
+        <ul>
+          <li>Short-term memory → recent context</li>
+          <li>Long-term memory → persistent facts</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 3</span>
+        <h3>Moderated Conversations</h3>
+        <p>
+          A Moderator Agent decides who should speak next by inspecting the latest message and returning the next speaker.
+        </p>
+        <ul>
+          <li>Conditional routing</li>
+          <li>Dynamic orchestration</li>
+          <li>LLM-directed control flow</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 4</span>
+        <h3>Tools and Structured Outputs</h3>
+        <p>
+          Agents can call external functions using JSON schemas. Gemini chooses the tool, generates arguments, and receives
+          the result back into context.
+        </p>
+        <ol>
+          <li>Define tools</li>
+          <li>Expose tools to the model</li>
+          <li>Let the model choose tools</li>
+          <li>Execute them externally</li>
+          <li>Return results back to the model</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 5</span>
+        <h3>Reasoning and Hand-Off</h3>
+        <p>The reasoning agent returns structured JSON with a message and the next agent to hand off to.</p>
+
+        <pre><code>{
+  "message": "...",
+  "handoff_to": "ResearchAgent"
+}</code></pre>
+
+        <ul>
+          <li><strong>Reasoning</strong> → handled by Gemini</li>
+          <li><strong>Control flow</strong> → handled by a simple router</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 6</span>
+        <h3>Supervisor Pattern</h3>
+        <p>
+          A Supervisor Agent coordinates specialized workers such as a Planner, Analyst, and Copywriter.
+        </p>
+        <ol>
+          <li>Planning</li>
+          <li>Analysis</li>
+          <li>Writing</li>
+          <li>Integration</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 7</span>
+        <h3>Parallel and Debate Patterns</h3>
+        <p>
+          Parallel agents work independently and then synthesize results. Debate agents argue opposing views while a judge evaluates them.
+        </p>
+        <ul>
+          <li><strong>Parallel Pattern</strong> → fan-out / fan-in reasoning</li>
+          <li><strong>Debate Pattern</strong> → adversarial reasoning</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 8</span>
+        <h3>Long-Term and Shared Memory</h3>
+        <p>
+          Long-term memory stores insights in a database, while shared memory allows multiple agents to read and write to the same store.
+        </p>
+        <ul>
+          <li>Database memory → persistence across sessions</li>
+          <li>Shared memory → collaborative multi-agent cognition</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 9</span>
+        <h3>Knowledge Extraction</h3>
+        <p>
+          A specialized agent extracts entities such as people, companies, locations, and products from unstructured text.
+        </p>
+        <ul>
+          <li>Knowledge graphs</li>
+          <li>Entity memory</li>
+          <li>Semantic indexing systems</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Pattern 10</span>
+        <h3>Chunking, Embedding, and Retrieval</h3>
+        <p>
+          This pattern chunks documents, generates embeddings, performs vector search, and decides when retrieval is necessary.
+        </p>
+        <ol>
+          <li>Decide if retrieval is needed</li>
+          <li>Retrieve only when useful</li>
+          <li>Inject retrieved context into generation</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="final">
+      <h2>Final Thoughts</h2>
+      <p>
+        These mental models are designed to help you understand the architectural decisions behind each script.
+        As you explore the repository, connect the implementation details to the higher-level design patterns described here.
+      </p>
+      <p>
+        With a Gemini API key and these mental models, you will be well on your way to building your own agentic AI systems.
+      </p>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Built as a learning guide for Agentic AI patterns.</p>
+  </footer>
+
+</body>
+</html>
