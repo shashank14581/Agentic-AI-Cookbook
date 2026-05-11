@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 8: Parallel Agents Explained</title>
+  <style>
+    body {
+      background: #F5F3FF;
+      color: #1e293b;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+    }
+    header {
+      background: linear-gradient(to right, #c4b5fd, #86efac);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+    .summary {
+      background: #FAF5FF;
+      border-left: 5px solid #8B5CF6;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+    .summary h2 {
+      margin-top: 0;
+    }
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .code-block pre {
+      background: #F0FDF4;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1e293b;
+    }
+    .code-block pre span {
+      display: block;
+    }
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #7E22CE;
+    }
+    .explanation p {
+      margin-bottom: 20px;
+      background: #F3E8FF;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #A855F7;
+    }
+    .explanation strong {
+      color: #6D28D9;
+    }
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 8: Parallel Agents (Fan‑Out & Fan‑In)</h1>
+    <p>Multiple agents work concurrently, then their outputs are critiqued and synthesized.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>This pattern uses Python’s <code>asyncio</code> to run multiple agents in parallel. In stage&nbsp;1, several analysts generate independent insights about a topic. In stage&nbsp;2, a critic evaluates each analyst’s output concurrently. Stage&nbsp;3 merges the analyses and critiques into a coherent summary. This fan‑out/fan‑in approach illustrates how to scale reasoning by parallelizing tasks and then synthesizing the results.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os, asyncio, nest_asyncio</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span># Async BaseAgent: uses async think()</span>
+<span>class BaseAgent:</span>
+<span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash-lite"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.memory = []</span>
+<span>        self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])</span>
+<span>        self.model = model</span>
+<span>        self._config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)],</span>
+<span>        )</span>
+<span>    async def think(self, input_text):</span>
+<span>        contents = [types.Content(role="user", parts=[types.Part.from_text(text=input_text)])]</span>
+<span>        response = ""</span>
+<span>        stream = await self.client.aio.models.generate_content_stream(model=self.model, contents=contents, config=self._config)</span>
+<span>        async for chunk in stream:</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="", flush=True)</span>
+<span>                response += chunk.text</span>
+<span>        print()</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+
+<span># Roles: Analyst, Critic, Synthesizer</span>
+<span>class Analyst(BaseAgent):</span>
+<span>    def __init__(self, name, domain):</span>
+<span>        prompt = f"You are {name}, a sharp {domain} analyst. Give a concise 2-sentence insight."</span>
+<span>        super().__init__(name, prompt)</span>
+
+<span>class Critic(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init>(name, f"You are {name}, a ruthless critic. Identify the single biggest flaw. One sentence.")</span>
+
+<span>class Synthesizer(BaseAgent):</span>
+<span>    def __init__(self, name):</span>
+<span>        super().__init>(name, f"You are {name}, a synthesis engine. Merge all inputs into one coherent paragraph.")</span>
+
+<span># Stage 1: Parallel analysts</span>
+<span>async def run_parallel_analysts(topic):</span>
+<span>    analysts = [</span>
+<span>        Analyst("Riya",  "market economics"),</span>
+<span>        Analyst("Arjun", "geopolitical risk"),</span>
+<span>        Analyst("Meera", "technology adoption"),</span>
+<span>    ]</span>
+<span>    async def run(agent):</span>
+<span>        print(f"── {agent.name} ──")</span>
+<span>        return agent.name, await agent.think(topic)</span>
+<span>    results = await asyncio.gather(*[run(a) for a in analysts])</span>
+<span>    return dict(results)</span>
+
+<span># Stage 2: Parallel critics</span>
+<span>async def run_parallel_critics(analyst_outputs):</span>
+<span>    async def critique(name, text):</span>
+<span>        critic = Critic("Dev")</span>
+<span>        print(f"── Critic on {name} ──")</span>
+<span>        return name, await critic.think(f"{name} said: {text}")</span>
+<span>    results = await asyncio.gather(*[critique(n, t) for n, t in analyst_outputs.items()])</span>
+<span>    return dict(results)</span>
+
+<span># Stage 3: Synthesis</span>
+<span>async def synthesize(analyst_outputs, critic_outputs):</span>
+<span>    synth = Synthesizer("Priya")</span>
+<span>    combined = "\n".join(</span>
+<span>        f"{name}: {analysis}\n(Critique: {critic_outputs[name]})"</span>
+<span>        for name, analysis in analyst_outputs.items()</span>
+<span>    )</span>
+<span>    return await synth.think(f"Merge these views:\n\n{combined}")</span>
+
+<span># Main: fan-out then fan-in</span>
+<span>async def main():</span>
+<span>    topic = "The rise of sovereign AI compute infrastructure in emerging economies"</span>
+<span>    analysts = await run_parallel_analysts(topic)</span>
+<span>    critiques = await run_parallel_critics(analysts)</span>
+<span>    final = await synthesize(analysts, critiques)</span>
+<span>    print(final)</span>
+
+<span>nest_asyncio.apply()</span>
+<span>if __name__ == "__main__":</span>
+<span>    asyncio.run(main())</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>Asynchronous BaseAgent:</strong> Unlike previous synchronous patterns, this agent uses an asynchronous <code>think()</code> method to support concurrent execution. It streams responses using <code>generate_content_stream</code> from Gemini’s asynchronous client.</p>
+        <p><strong>Roles:</strong> There are three roles: <code>Analyst</code> produces concise insights on a specified domain, <code>Critic</code> identifies flaws in each analysis, and <code>Synthesizer</code> merges multiple perspectives into one coherent narrative.</p>
+        <p><strong>Stage 1 – Parallel Analysts:</strong> The <code>run_parallel_analysts()</code> function spawns multiple analysts and runs their <code>think()</code> methods concurrently using <code>asyncio.gather()</code>. The function returns a dictionary mapping analyst names to their outputs.</p>
+        <p><strong>Stage 2 – Parallel Critics:</strong> Each analyst output is critiqued in parallel by a single critic agent. Again, <code>asyncio.gather()</code> is used to run critiques concurrently, producing a dictionary of critiques.</p>
+        <p><strong>Stage 3 – Synthesis:</strong> A synthesizer agent receives all analyses and their corresponding critiques in a single prompt. It returns a unified paragraph summarizing and critiquing the topic.</p>
+        <p><strong>Main Function:</strong> Orchestrates the three stages in sequence: fan‑out (analysts and critics run in parallel) followed by fan‑in (synthesis). The use of <code>nest_asyncio.apply()</code> allows asynchronous code to run within interactive environments.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
