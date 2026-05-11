@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 4: Agents Using Tools Explained</title>
+  <style>
+    body {
+      background: #F3FDF6;
+      color: #1f2937;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+    }
+    header {
+      background: linear-gradient(to right, #4ade80, #facc15);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+    .summary {
+      background: #FEFCE8;
+      border-left: 5px solid #FACC15;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+    .summary h2 {
+      margin-top: 0;
+    }
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .code-block pre {
+      background: #ECFDF5;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1f2937;
+    }
+    .code-block pre span {
+      display: block;
+    }
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #6B7280;
+    }
+    .explanation p {
+      margin-bottom: 20px;
+      background: #F7FEE7;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #4ADE80;
+    }
+    .explanation strong {
+      color: #16A34A;
+    }
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 4: Using Tools</h1>
+    <p>This pattern shows how an agent can call external functions (tools) to fetch data or perform calculations.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>The script defines two real Python functions—one to fetch weather from an external API and another to add numbers. A tool schema exposes these functions to the Gemini model. The <code>Agent</code> class uses the Gemini API’s tool‑calling capabilities: if the model returns a function call, the agent executes the Python function and then sends the result back to Gemini before generating the final answer. The example conversation asks the agents for the weather and demonstrates the tool invocation.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os</span>
+<span>import requests</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span># -------- REAL TOOL --------</span>
+<span>def get_weather(city):</span>
+<span>    geo = requests.get(</span>
+<span>        f"https://geocoding-api.open-meteo.com/v1/search?name={city}"</span>
+<span>    ).json()</span>
+<span>    if "results" not in geo:</span>
+<span>        return f"{city} not found"</span>
+<span>    lat = geo["results"][0]["latitude"]</span>
+<span>    lon = geo["results"][0]["longitude"]</span>
+<span>    weather = requests.get(</span>
+<span>        f"https://api.open-meteo.com/v1/forecast?"</span>
+<span>        f"latitude={lat}&longitude={lon}&current_weather=true"</span>
+<span>    ).json()</span>
+<span>    data = weather.get("current_weather", {})</span>
+<span>    return f"{city}: {data.get('temperature')}°C"</span>
+
+<span>def add_numbers(a, b):</span>
+<span>    return a + b</span>
+
+<span># -------- TOOL SCHEMA --------</span>
+<span>tools = [</span>
+<span>    types.Tool(</span>
+<span>        function_declarations=[</span>
+<span>            types.FunctionDeclaration(</span>
+<span>                name="get_weather",</span>
+<span>                description="Get real weather",</span>
+<span>                parameters={</span>
+<span>                    "type": "OBJECT",</span>
+<span>                    "properties": {"city": {"type": "STRING"}},</span>
+<span>                    "required": ["city"]</span>
+<span>                }</span>
+<span>            ),</span>
+<span>            types.FunctionDeclaration(</span>
+<span>                name="add_numbers",</span>
+<span>                description="Add numbers",</span>
+<span>                parameters={</span>
+<span>                    "type": "OBJECT",</span>
+<span>                    "properties": {</span>
+<span>                        "a": {"type": "NUMBER"},</span>
+<span>                        "b": {"type": "NUMBER"}</span>
+<span>                    },</span>
+<span>                    "required": ["a", "b"]</span>
+<span>                }</span>
+<span>            )</span>
+<span>        ]</span>
+<span>    )</span>
+<span>]</span>
+
+<span># -------- AGENT --------</span>
+<span>class Agent:</span>
+<span>    def __init__(self, name, prompt):</span>
+<span>        self.name = name</span>
+<span>        self.prompt = prompt</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = "gemini-2.5-flash"</span>
+
+<span>    def think(self, text):</span>
+<span>        if not text:</span>
+<span>            text = "continue"</span>
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=text)]</span>
+<span>            )</span>
+<span>        ]</span>
+<span>        config = types.GenerateContentConfig(</span>
+<span>            system_instruction=[types.Part.from_text(text=self.prompt)],</span>
+<span>            tools=tools</span>
+<span>        )</span>
+<span>        response = self.client.models.generate_content(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
+<span>        )</span>
+<span>        # -------- CHECK TOOL --------</span>
+<span>        fc = None</span>
+<span>        for p in response.candidates[0].content.parts:</span>
+<span>            if p.function_call:</span>
+<span>                fc = p.function_call</span>
+<span>                break</span>
+<span>        # -------- IF TOOL --------</span>
+<span>        if fc:</span>
+<span>            name, args = fc.name, fc.args</span>
+<span>            print(f"\n⚙️ {self.name} -> {name} {args}")</span>
+<span>            if name == "get_weather":</span>
+<span>                result = get_weather(**args)</span>
+<span>            elif name == "add_numbers":</span>
+<span>                result = add_numbers(**args)</span>
+<span>            else:</span>
+<span>                result = "Unknown tool"</span>
+<span>            print(f"🔧 {result}")</span>
+<span>            tool_response = types.Content(</span>
+<span>                role="tool",</span>
+<span>                parts=[</span>
+<span>                    types.Part.from_function_response(</span>
+<span>                        name=name,</span>
+<span>                        response={"result": result}</span>
+<span>                    )</span>
+<span>                ]</span>
+<span>            )</span>
+<span>            final = self.client.models.generate_content(</span>
+<span>                model=self.model,</span>
+<span>                contents=[</span>
+<span>                    contents[0],</span>
+<span>                    types.Content(role="model", parts=response.candidates[0].content.parts),</span>
+<span>                    tool_response</span>
+<span>                ],</span>
+<span>                config=config</span>
+<span>            )</span>
+<span>            # -------- EXTRACT TEXT --------</span>
+<span>            if final.text:</span>
+<span>                output = final.text</span>
+<span>            else:</span>
+<span>                output = ""</span>
+<span>                for p in final.candidates[0].content.parts:</span>
+<span>                    if p.text:</span>
+<span>                        output += p.text</span>
+<span>        else:</span>
+<span>            if response.text:</span>
+<span>                output = response.text</span>
+<span>            else:</span>
+<span>                output = ""</span>
+<span>                for p in response.candidates[0].content.parts:</span>
+<span>                    if p.text:</span>
+<span>                        output += p.text</span>
+<span>        print(output)</span>
+<span>        return output</span>
+
+<span># -------- RUN --------</span>
+<span>if __name__ == "__main__":</span>
+<span>    human = Agent("Shashank", "You are a human")</span>
+<span>    dog = Agent("Bruno", "You are a smart dog")</span>
+<span>    msg = "What's the weather in London?"</span>
+<span>    for _ in range(1):</span>
+<span>        print(f"\nShashank:", end=" ")</span>
+<span>        msg = human.think(msg)</span>
+<span>        print(f"\nBruno:", end=" ")</span>
+<span>        msg = dog.think(msg)</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>Lines&nbsp;1–3:</strong> Import <code>os</code>, <code>requests</code>, and the Gemini client. <code>requests</code> is used to call external APIs.</p>
+        <p><strong>Lines&nbsp;6–25:</strong> Define <code>get_weather()</code> which uses the Open‑Meteo geocoding and weather APIs to get the current temperature for a city. If the city isn’t found, it returns an error message. <code>add_numbers()</code> simply returns the sum of two numbers.</p>
+        <p><strong>Lines&nbsp;32–60:</strong> Create a <code>tools</code> list containing a single <code>Tool</code> object. Each function is declared with a name, description and JSON schema describing its arguments. These declarations allow Gemini to call the Python functions when appropriate.</p>
+        <p><strong>Lines&nbsp;63–161:</strong> Define the <code>Agent</code> class. The <code>think()</code> method builds the request with a system instruction and the tools. When Gemini returns, it inspects the output for a <code>function_call</code>. If a function call exists, it executes the corresponding Python function and sends the result back to the model. Finally, it extracts the final message text and returns it.</p>
+        <p><strong>Lines&nbsp;164–178:</strong> In the main block, create a human and a dog agent. The conversation asks for the weather in London, demonstrating how the model calls the <code>get_weather</code> tool, prints the intermediate result (with the ⚙️ and 🔧 icons), and then integrates the tool response into its final output.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
