@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern 7: Supervisor Pattern Explained</title>
+  <style>
+    body {
+      background: #F0FDFA;
+      color: #1e293b;
+      font-family: Inter, Arial, sans-serif;
+      line-height: 1.7;
+      margin: 0;
+    }
+    header {
+      background: linear-gradient(to right, #2dd4bf, #c084fc);
+      padding: 40px 20px;
+      text-align: center;
+      color: white;
+    }
+    header h1 {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+    }
+    header p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+    .summary {
+      background: #ECFEFF;
+      border-left: 5px solid #14B8A6;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+    .summary h2 {
+      margin-top: 0;
+    }
+    .code-explanation {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+    .code-block pre {
+      background: #F7FEFF;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      counter-reset: line;
+      font-family: "Source Code Pro", monospace;
+      color: #1e293b;
+    }
+    .code-block pre span {
+      display: block;
+    }
+    .code-block pre span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 35px;
+      margin-right: 10px;
+      color: #0F766E;
+    }
+    .explanation p {
+      margin-bottom: 20px;
+      background: #F6F5FF;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 5px solid #8B5CF6;
+    }
+    .explanation strong {
+      color: #4C1D95;
+    }
+    @media (max-width: 800px) {
+      .code-explanation {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 7: Supervisor Pattern</h1>
+    <p>A supervisor coordinates specialized agents (planner, analyst, copywriter) to complete a task.</p>
+  </header>
+  <div class="container">
+    <div class="summary">
+      <h2>Summary</h2>
+      <p>This pattern demonstrates a simple workflow manager. The supervisor keeps track of progress and decides which specialist agent to call next. The state includes a task and optional fields for strategy, insights, and copy. The supervisor’s prompt describes rules for selecting the next step (planner → analyst → copywriter). Each specialized agent generates its part and updates the state. When all fields are filled, the workflow finishes.</p>
+    </div>
+    <div class="code-explanation">
+      <div class="code-block">
+        <pre><code>
+<span>import os</span>
+<span>import json</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span># BaseAgent defines think() that can optionally enforce JSON schema.</span>
+<span>class BaseAgent:</span>
+<span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash-lite"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+<span>        self.memory = []</span>
+<span>    def think(self, input_text, schema=None):</span>
+<span>        contents = [types.Content(role="user", parts=[types.Part.from_text(text=input_text)])]</span>
+<span>        config = types.GenerateContentConfig(</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)],</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            response_mime_type="application/json" if schema else None,</span>
+<span>            response_schema=schema</span>
+<span>        )</span>
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(model=self.model, contents=contents, config=config):</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="")</span>
+<span>                response += chunk.text</span>
+<span>        print()</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+
+<span># Planner, Analyst, Copywriter: specialized workers with run() methods</span>
+<span>class Planner(BaseAgent):</span>
+<span>    def __init__(self):</span>
+<span>        super().__init>("Planner", "You are a marketing strategist. Create a clear strategy.")</span>
+<span>    def run(self, state):</span>
+<span>        return self.think(json.dumps(state))</span>
+
+<span>class Analyst(BaseAgent):</span>
+<span>    def __init__(self):</span>
+<span>        super().__init>("Analyst", "You are a data analyst. Generate insights from the context.")</span>
+<span>    def run(self, state):</span>
+<span>        return self.think(json.dumps(state))</span>
+
+<span>class Copywriter(BaseAgent):</span>
+<span>    def __init__(self):</span>
+<span>        super().__init>("Copywriter", "You are a marketing copywriter. Write compelling campaign copy.")</span>
+<span>    def run(self, state):</span>
+<span>        return self.think(json.dumps(state))</span>
+
+<span># Supervisor: decides next agent based on state</span>
+<span>class Supervisor(BaseAgent):</span>
+<span>    def __init__(self):</span>
+<span>        super().__init>("Supervisor", """</span>
+<span>You are a supervisor managing a workflow.</span>
+<span>State contains task, strategy, insights, copy.</span>
+<span>Rules: if no strategy → planner; if strategy but no insights → analyst; if insights but no copy → copywriter; if all exist → done.</span>
+<span>Return JSON: { "next": "planner" | "analyst" | "copywriter" | "done" }</span>
+<span>""")</span>
+<span>        self.schema = {</span>
+<span>            "type": "object",</span>
+<span>            "properties": {"next": {"type": "string", "enum": ["planner", "analyst", "copywriter", "done"]}},</span>
+<span>            "required": ["next"]</span>
+<span>        }</span>
+<span>    def route(self, state):</span>
+<span>        response = self.think(json.dumps(state), schema=self.schema)</span>
+<span>        return json.loads(response)["next"]</span>
+
+<span># Orchestrate: repeatedly consult supervisor and run specialists until done</span>
+<span>def orchestrate():</span>
+<span>    state = {"task": "Increase conversion for email campaigns at Big Bazar", "strategy": None, "insights": None, "copy": None}</span>
+<span>    planner, analyst, copywriter = Planner(), Analyst(), Copywriter()</span>
+<span>    supervisor = Supervisor()</span>
+<span>    mapping = {"planner": planner, "analyst": analyst, "copywriter": copywriter}</span>
+<span>    while True:</span>
+<span>        print("Supervisor deciding...")</span>
+<span>        step = supervisor.route(state)</span>
+<span>        if step == "done":</span>
+<span>            print("Workflow complete")</span>
+<span>            break</span>
+<span>        agent = mapping[step]</span>
+<span>        print(f"{agent.name}: ", end="")</span>
+<span>        output = agent.run(state)</span>
+<span>        if step == "planner":</span>
+<span>            state["strategy"] = output</span>
+<span>        elif step == "analyst":</span>
+<span>            state["insights"] = output</span>
+<span>        elif step == "copywriter":</span>
+<span>            state["copy"] = output</span>
+
+<span># Main entry point</span>
+<span>if __name__ == "__main__":</span>
+<span>    orchestrate()</span>
+        </code></pre>
+      </div>
+      <div class="explanation">
+        <p><strong>BaseAgent:</strong> The supervisor pattern reuses <code>BaseAgent</code> from previous patterns. The <code>think()</code> method optionally accepts a JSON schema and configures the Gemini client to return JSON when a schema is provided.</p>
+        <p><strong>Worker Agents:</strong> The <code>Planner</code>, <code>Analyst</code> and <code>Copywriter</code> classes inherit from <code>BaseAgent</code> and define a <code>run()</code> method. Each one takes a serialized state dictionary, prompts the model to generate a strategy, insights, or marketing copy, and returns the generated text.</p>
+        <p><strong>Supervisor:</strong> Extends <code>BaseAgent</code> with a custom prompt that lists the workflow rules. It defines a JSON schema specifying that the model must return a single field <code>"next"</code> with one of four values. The <code>route()</code> method passes the current state through the model and parses the JSON to decide which agent runs next.</p>
+        <p><strong>Orchestrate:</strong> Initializes the state and agent instances. In a loop, it asks the supervisor for the next step. If the supervisor returns <code>"done"</code>, the loop exits. Otherwise, it runs the corresponding specialist, updates the state with the result, and repeats. This pattern illustrates how to coordinate multiple agents to complete a structured task.</p>
+        <p><strong>Main:</strong> The script’s entry point simply calls <code>orchestrate()</code> to start the workflow.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
