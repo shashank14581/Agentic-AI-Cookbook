@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern 9l – Agent + MCP: Full Integration</title>
+  <style>
+    /*
+      This final page brings everything together: a Gemini agent is
+      empowered to call multiple tools hosted on an MCP server. A
+      vibrant teal‑to‑orange gradient symbolises the complete
+      integration between retrieval, tool invocation and reasoning.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #f7f9fa;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #319795, #dd6b20);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #fdebd0;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1400px;
+      margin: auto;
+    }
+    .code-pane {
+      background: #f0ffff;
+      border: 1px solid #bee3f8;
+      border-radius: 12px;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    .code-pane pre {
+      margin: 0;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+    .explanation-pane {
+      background: #fffaf0;
+      border: 1px solid #fbd38d;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .explanation-pane h3 {
+      margin-top: 0;
+      color: #c05621;
+    }
+    .explanation-pane p {
+      margin: 0.75rem 0;
+    }
+    .explanation-pane ul {
+      margin: 0.5rem 0 0.75rem 1.2rem;
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      background: #2c7a7b;
+      color: #faf5e4;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 9l – Agent + MCP: Full Integration</h1>
+    <p>An agent uses Gemini to reason and calls multiple tools via an MCP server. The tools provide private knowledge and compute risk scores, enabling complex decision making.</p>
+  </header>
+  <div class="container">
+    <div class="code-pane">
+      <pre><code>
+1 !pip&nbsp;install&nbsp;-q&nbsp;google-genai&nbsp;"mcp[cli]"&nbsp;uvicorn&nbsp;nest_asyncio
+2 
+3 import&nbsp;os, time, socket, threading
+4 import&nbsp;nest_asyncio
+5 from&nbsp;google&nbsp;import&nbsp;genai
+6 from&nbsp;google.genai&nbsp;import&nbsp;types
+7 from&nbsp;mcp.server.fastmcp&nbsp;import&nbsp;FastMCP
+8 from&nbsp;mcp&nbsp;import&nbsp;ClientSession
+9 from&nbsp;mcp.client.streamable_http&nbsp;import&nbsp;streamablehttp_client
+10 
+11 nest_asyncio.apply()
+12 os.environ["GEMINI_API_KEY"]&nbsp;=&nbsp;"your_api_key"
+13 
+14 # CONFIG
+15 PORT&nbsp;=&nbsp;8022
+16 MCP_URL&nbsp;=&nbsp;f"http://127.0.0.1:{PORT}/mcp"
+17 
+18 # MCP SERVER
+19 mcp&nbsp;=&nbsp;FastMCP(name="agent_tool_server",stateless_http=True,json_response=True)
+20 
+21 @mcp.tool()
+22 def&nbsp;search_private_knowledge(query:&nbsp;str)&nbsp;->&nbsp;str:
+23 &nbsp;&nbsp;query&nbsp;=&nbsp;query.lower()
+24 &nbsp;&nbsp;if&nbsp;"blue mango"&nbsp;in&nbsp;query&nbsp;and&nbsp;any(word&nbsp;in&nbsp;query&nbsp;for&nbsp;word&nbsp;in&nbsp;["owner","ownership","failure","failures"]):
+25 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"The fallback owner for Blue Mango failures is Aniket from the DS Ops team."
+26 &nbsp;&nbsp;if&nbsp;"blue mango"&nbsp;in&nbsp;query:
+27 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Blue Mango is the internal codename for the customer retention model in Project Sarayu."
+28 &nbsp;&nbsp;if&nbsp;"confidence"&nbsp;in&nbsp;query&nbsp;or&nbsp;"0.62"&nbsp;in&nbsp;query&nbsp;or&nbsp;"threshold"&nbsp;in&nbsp;query:
+29 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"If Blue Mango confidence drops below 0.62, the audience must be routed to the Silver Gate manual review queue."
+30 &nbsp;&nbsp;if&nbsp;"silver gate"&nbsp;in&nbsp;query:
+31 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Silver Gate is the manual review queue for Project Sarayu."
+32 &nbsp;&nbsp;return&nbsp;"No private knowledge found."
+33 
+34 @mcp.tool()
+35 def&nbsp;calculate_campaign_risk(confidence:&nbsp;float)&nbsp;->&nbsp;str:
+36 &nbsp;&nbsp;if&nbsp;confidence&nbsp;&lt;&nbsp;0.62:
+37 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"HIGH RISK: Route audience to Silver Gate manual review queue."
+38 &nbsp;&nbsp;return&nbsp;"LOW RISK: Audience can continue to activation."
+39 
+40 def&nbsp;run_mcp_server():
+41 &nbsp;&nbsp;mcp.settings.port&nbsp;=&nbsp;PORT
+42 &nbsp;&nbsp;mcp.run(transport="streamable-http")
+43 
+44 def&nbsp;port_is_busy(port):
+45 &nbsp;&nbsp;with&nbsp;socket.socket(socket.AF_INET,&nbsp;socket.SOCK_STREAM)&nbsp;as&nbsp;s:
+46 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;s.connect_ex(("127.0.0.1",&nbsp;port))&nbsp;==&nbsp;0
+47 
+48 if&nbsp;not&nbsp;port_is_busy(PORT):
+49 &nbsp;&nbsp;server_thread&nbsp;=&nbsp;threading.Thread(target=run_mcp_server,daemon=True)
+50 &nbsp;&nbsp;server_thread.start()
+51 &nbsp;&nbsp;time.sleep(3)
+52 &nbsp;&nbsp;print(f"MCP server started on port {PORT}.")
+53 else:
+54 &nbsp;&nbsp;print(f"MCP server already running on port {PORT}. Reusing it.")
+55 
+56 # MCP CLIENT
+57 class MCPClient:
+58 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;url=MCP_URL):
+59 &nbsp;&nbsp;&nbsp;&nbsp;self.url&nbsp;=&nbsp;url
+60 &nbsp;&nbsp;async&nbsp;def&nbsp;call_tool(self,&nbsp;tool_name,&nbsp;arguments):
+61 &nbsp;&nbsp;&nbsp;&nbsp;async&nbsp;with&nbsp;streamablehttp_client(self.url)&nbsp;as&nbsp;(read,&nbsp;write,&nbsp;_):
+62 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;async&nbsp;with&nbsp;ClientSession(read,&nbsp;write)&nbsp;as&nbsp;session:
+63 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;await&nbsp;session.initialize()
+64 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result&nbsp;=&nbsp;await&nbsp;session.call_tool(name=tool_name,arguments=arguments)
+65 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;result.content[0].text
+66 
+67 # BASE AI AGENT
+68 class BaseAgent:
+69 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;name,&nbsp;sys_prompt,&nbsp;mcp_client,&nbsp;model="gemini-2.5-flash-lite"):
+70 &nbsp;&nbsp;&nbsp;&nbsp;self.name&nbsp;=&nbsp;name
+71 &nbsp;&nbsp;&nbsp;&nbsp;self.sys_prompt&nbsp;=&nbsp;sys_prompt
+72 &nbsp;&nbsp;&nbsp;&nbsp;self.mcp_client&nbsp;=&nbsp;mcp_client
+73 &nbsp;&nbsp;&nbsp;&nbsp;self.client&nbsp;=&nbsp;genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+74 &nbsp;&nbsp;&nbsp;&nbsp;self.model&nbsp;=&nbsp;model
+75 &nbsp;&nbsp;&nbsp;&nbsp;self.memory&nbsp;=&nbsp;[]
+76 
+77 &nbsp;&nbsp;def&nbsp;get_tools(self):
+78 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;[
+79 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;types.Tool(function_declarations=[
+80 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;types.FunctionDeclaration(name="search_private_knowledge",description="Search private MCP knowledge base for internal project facts.",parameters=types.Schema(type=types.Type.OBJECT,properties={"query":types.Schema(type=types.Type.STRING,description="Search query for private knowledge")},required=["query"])),
+81 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;types.FunctionDeclaration(name="calculate_campaign_risk",description="Calculate campaign risk based on Blue Mango confidence score.",parameters=types.Schema(type=types.Type.OBJECT,properties={"confidence":types.Schema(type=types.Type.NUMBER,description="Blue Mango confidence score")},required=["confidence"]))
+82 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;])
+83 &nbsp;&nbsp;&nbsp;&nbsp;]
+84 
+85 &nbsp;&nbsp;async&nbsp;def&nbsp;think(self,&nbsp;input_text):
+86 &nbsp;&nbsp;&nbsp;&nbsp;response&nbsp;=&nbsp;self.client.models.generate_content(
+87 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model=self.model,
+88 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;contents=[types.Content(role="user",parts=[types.Part.from_text(text=input_text)])],
+89 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_budget=0),system_instruction=[types.Part.from_text(self.sys_prompt)],tools=self.get_tools())
+90 &nbsp;&nbsp;&nbsp;&nbsp;)
+91 &nbsp;&nbsp;&nbsp;&nbsp;part&nbsp;=&nbsp;response.candidates[0].content.parts[0]
+92 &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;part.function_call:
+93 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tool_name&nbsp;=&nbsp;part.function_call.name
+94 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arguments&nbsp;=&nbsp;dict(part.function_call.args)
+95 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f"\n[Gemini selected MCP tool:&nbsp;{tool_name}]")
+96 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(arguments)
+97 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;answer&nbsp;=&nbsp;await&nbsp;self.mcp_client.call_tool(tool_name=tool_name,arguments=arguments)
+98 &nbsp;&nbsp;&nbsp;&nbsp;else:
+99 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;answer&nbsp;=&nbsp;response.text
+100 &nbsp;&nbsp;&nbsp;&nbsp;print(answer)
+101 &nbsp;&nbsp;&nbsp;&nbsp;self.memory.append((input_text,&nbsp;answer))
+102 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;answer
+103 
+104 # MCP ENABLED AGENT
+105 class MCPAgent(BaseAgent):
+106 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;name,&nbsp;mcp_client):
+107 &nbsp;&nbsp;&nbsp;&nbsp;super().__init__(
+108 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name=name,
+109 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys_prompt="""
+110 You are an MCP‑enabled AI agent.
+111 
+112 You have access to tools through an MCP server.
+113 
+114 Use search_private_knowledge when the user asks about:
+115 - Blue Mango
+116 - Silver Gate
+117 - Project Sarayu
+118 - internal owners
+119 - private project facts
+120 
+121 Use calculate_campaign_risk when the user provides a confidence score.
+122 
+123 Do not invent internal facts.
+124 """,
+125 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mcp_client=mcp_client
+126 &nbsp;&nbsp;&nbsp;&nbsp;)
+127 
+128 # ORCHESTRATION
+129 async&nbsp;def&nbsp;main():
+130 &nbsp;&nbsp;mcp_client&nbsp;=&nbsp;MCPClient()
+131 &nbsp;&nbsp;agent&nbsp;=&nbsp;MCPAgent(name="MCPAgent",mcp_client=mcp_client)
+132 &nbsp;&nbsp;questions&nbsp;=&nbsp;[
+133 &nbsp;&nbsp;&nbsp;&nbsp;"What is Blue Mango?",
+134 &nbsp;&nbsp;&nbsp;&nbsp;"Who owns Blue Mango failures?",
+135 &nbsp;&nbsp;&nbsp;&nbsp;"What happens if confidence drops below 0.62?",
+136 &nbsp;&nbsp;&nbsp;&nbsp;"Blue Mango confidence is 0.55. What should we do?",
+137 &nbsp;&nbsp;&nbsp;&nbsp;"Blue Mango confidence is 0.81. What should we do?"
+138 &nbsp;&nbsp;]
+139 &nbsp;&nbsp;for&nbsp;question&nbsp;in&nbsp;questions:
+140 &nbsp;&nbsp;&nbsp;&nbsp;print(f"\nUser:&nbsp;{question}")
+141 &nbsp;&nbsp;&nbsp;&nbsp;print(f"{agent.name}:&nbsp;",end="")
+142 &nbsp;&nbsp;&nbsp;&nbsp;await&nbsp;agent.think(question)
+143 
+144 await&nbsp;main()
+      </code></pre>
+    </div>
+    <div class="explanation-pane">
+      <h3>Server with Multiple Tools</h3>
+      <p>The server defines two tools: <code>search_private_knowledge</code> for retrieving internal facts about Blue Mango, Silver Gate or confidence thresholds, and <code>calculate_campaign_risk</code> for mapping a numeric confidence score to a risk assessment. Tools are registered via decorators on functions and served via FastMCP.</p>
+      <h3>Client and Base Agent</h3>
+      <p>The <code>MCPClient</code> and the <code>BaseAgent</code> are extended to handle multiple tools. The <code>get_tools()</code> method returns a list of two function declarations. When Gemini decides to call a tool, the agent prints the selection and passes the call to the MCP client. Responses are printed and stored in memory.</p>
+      <h3>MCP Agent Prompt</h3>
+      <p>The <code>MCPAgent</code> sets a system prompt that instructs Gemini exactly when to use each tool. It clarifies that search_private_knowledge should be used for questions about Blue Mango, Silver Gate or other private facts, and that calculate_campaign_risk should be used when a confidence score is provided. The prompt prohibits fabrication of private information.</p>
+      <h3>Bringing It All Together</h3>
+      <p>In the <code>main()</code> coroutine the server is started if necessary, a client and MCP agent are created, and a series of questions are asked. Some queries trigger retrieval of private knowledge, others request a risk calculation, and the agent seamlessly switches between tool calls and direct replies. This pattern demonstrates full integration between LLM reasoning and an external tool server.</p>
+    </div>
+  </div>
+  <footer>
+    <p>Agentic pattern 9l: full end‑to‑end integration of Gemini, MCP tools and orchestration.</p>
+  </footer>
+</body>
+</html>
