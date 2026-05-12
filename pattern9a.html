@@ -438,9 +438,7 @@
       </div>
       <h1>The <span>Long-Term Memory</span> Agent</h1>
       <p>
-        In this pattern, agents transcend ephemeral chat sessions. By integrating with a 
-        database, the agent decides which observations are worth "remembering" to refine 
-        future analysis and knowledge retrieval.
+        In this pattern, agents transcend ephemeral chat sessions. By integrating with a database, the agent decides which observations are worth "remembering" to refine future analysis and knowledge retrieval.
       </p>
     </div>
 
@@ -469,17 +467,8 @@
         <h2>What this pattern teaches</h2>
       </div>
       <div class="summary">
-        <p>
-          The <strong>Long-Term Memory Agent</strong> (Pattern 10) demonstrates how to bridge 
-          external data sources (RSS feeds) with persistent storage (SQLite). 
-          The agent evaluates news articles not just in isolation, but by checking its 
-          existing knowledge base first.
-        </p>
-        <p>
-          This pattern moves beyond simple RAG (Retrieval Augmented Generation) by giving 
-          the agent <strong>Agency</strong> over its own memory—deciding what is "meaningful" 
-          to save and what to ignore, building a custom intelligence layer.
-        </p>
+        <p> The <strong>Long-Term Memory Agent</strong> (Pattern 10) demonstrates how to bridge external data sources (RSS feeds) with persistent storage (SQLite). The agent evaluates news articles not just in isolation, but by checking its existing knowledge base first. </p>
+        <p> This pattern moves beyond simple RAG (Retrieval Augmented Generation) by giving the agent <strong>Agency</strong> over its own memory—deciding what is "meaningful" to save and what to ignore, building a custom intelligence layer. </p>
       </div>
     </section>
 
@@ -495,58 +484,85 @@
             <span>pattern10.py</span>
             <div class="window-dots"><span></span><span></span><span></span></div>
           </div>
-          <pre><code><span>import sqlite3</span>
+          <pre><code><span>import os</span>
+<span>import sqlite3</span>
+<span>import requests</span>
 <span>import feedparser</span>
+<span>from bs4 import BeautifulSoup</span>
 <span>from google import genai</span>
+<span>from google.genai import types</span>
 
-<span># DB Functions</span>
 <span>def init_db():</span>
 <span>    conn = sqlite3.connect("agent_memory.db")</span>
-<span>    conn.execute("CREATE TABLE IF NOT EXISTS memory (content TEXT)")</span>
-<span>    conn.close()</span>
-
-<span>def save_to_db(content):</span>
-<span>    conn = sqlite3.connect("agent_memory.db")</span>
-<span>    conn.execute("INSERT INTO memory VALUES (?)", (content,))</span>
+<span>    cursor = conn.cursor()</span>
+<span>    cursor.execute("""CREATE TABLE IF NOT EXISTS memory (</span>
+<span>        id INTEGER PRIMARY KEY AUTOINCREMENT,</span>
+<span>        content TEXT, source TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")</span>
 <span>    conn.commit()</span>
 <span>    conn.close()</span>
 
-<span>class NewsAgent:</span>
+<span>def save_to_db(content, source):</span>
+<span>    conn = sqlite3.connect("agent_memory.db")</span>
+<span>    cursor = conn.cursor()</span>
+<span>    cursor.execute("INSERT INTO memory (content, source) VALUES (?, ?)", (content, source))</span>
+<span>    conn.commit()</span>
+<span>    conn.close()</span>
+
+<span>def load_memory(limit=5):</span>
+<span>    conn = sqlite3.connect("agent_memory.db")</span>
+<span>    cursor = conn.cursor()</span>
+<span>    cursor.execute("SELECT content FROM memory ORDER BY created_at DESC LIMIT ?", (limit,))</span>
+<span>    rows = cursor.fetchall()</span>
+<span>    conn.close()</span>
+<span>    return [r[0] for r in rows]</span>
+
+<span>def fetch_news():</span>
+<span>    feed = feedparser.parse("http://feeds.bbci.co.uk/news/rss.xml")</span>
+<span>    return [{"title": entry.title, "link": entry.link} for entry in feed.entries[:5]]</span>
+
+<span>def extract_text(url):</span>
+<span>    try:</span>
+<span>        res = requests.get(url, timeout=5)</span>
+<span>        soup = BeautifulSoup(res.text, "html.parser")</span>
+<span>        paragraphs = soup.find_all("p")</span>
+<span>        return " ".join([p.get_text() for p in paragraphs])[:3000]</span>
+<span>    except: return ""</span>
+
+<span>class NewsAgent():</span>
 <span>    def __init__(self):</span>
-<span>        self.client = genai.Client()</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
 <span>        self.model = "gemini-2.5-flash"</span>
 
-<span>    def think(self, article, title):</span>
-<span>        # Load previous context</span>
-<span>        memory = self.get_recent_memory()</span>
-<span>        prompt = f"Knowledge: {memory}\n\nAnalyze: {title}\n{article}\nReturn 'SKIP' or insight."</span>
-<span>        </span>
-<span>        res = self.client.models.generate_content(model=self.model, contents=prompt)</span>
-<span>        return res.text.strip()</span>
+<span>    def think(self, article_text, title):</span>
+<span>        memory = "\n".join(load_memory())</span>
+<span>        prompt = f"Existing knowledge:\n{memory}\n\nRead this: {title}\n{article_text}\nReturn 'SKIP' or insight."</span>
+<span>        contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt)])]</span>
+<span>        config = types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_budget=0))</span>
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(model=self.model, contents=contents, config=config):</span>
+<span>            if chunk.text: response += chunk.text</span>
+<span>        return response.strip()</span>
 
-<span>    def get_recent_memory(self):</span>
-<span>        conn = sqlite3.connect("agent_memory.db")</span>
-<span>        rows = conn.execute("SELECT content FROM memory LIMIT 5").fetchall()</span>
-<span>        return "\n".join([r[0] for r in rows])</span>
-
-<span>def run():</span>
+<span>def run_pipeline():</span>
 <span>    init_db()</span>
 <span>    agent = NewsAgent()</span>
-<span>    feed = feedparser.parse("http://feeds.bbci.co.uk/news/rss.xml")</span>
-<span>    </span>
-<span>    for entry in feed.entries[:3]:</span>
-<span>        insight = agent.think(entry.summary, entry.title)</span>
-<span>        if insight != "SKIP":</span>
-<span>            save_to_db(insight)</span></code></pre>
+<span>    articles = fetch_news()</span>
+<span>    for art in articles:</span>
+<span>        text = extract_text(art["link"])</span>
+<span>        if not text: continue</span>
+<span>        insight = agent.think(text, art["title"])</span>
+<span>        if insight != "SKIP": save_to_db(insight, art["link"])</span>
+
+<span>if __name__ == "__main__": run_pipeline()</span></code></pre>
         </div>
 
         <div class="explanation">
           <div class="explanation-header">Mental Model</div>
           <div class="explanation-content">
-            <p><strong>Lines 6-15:</strong> We use <code class="inline">sqlite3</code> to create a local persistent file. Unlike Python's memory, this data survives even after the script stops running.</p>
-            <p><strong>Lines 24-29:</strong> Before analyzing new news, the agent calls <code class="inline">get_recent_memory()</code>. This injects "what it already knows" into the prompt, preventing duplicate work.</p>
-            <p><strong>Lines 41-48:</strong> The pipeline loop. The agent acts as a gatekeeper—if it returns <code class="inline">"SKIP"</code>, the database remains untouched. Only "meaningful" insights are committed.</p>
-            <p><strong>Long-term Value:</strong> Over days of running this, the agent builds a specialized context window that is unique to the data it has encountered.</p>
+            <p><strong>Lines 9-33:</strong> We set up the <strong>SQLite</strong> engine. Unlike standard memory, this database persists on disk, allowing the agent to remember things across separate runs.</p>
+            <p><strong>Lines 35-46:</strong> The "Scraper" logic. We use <code class="inline">feedparser</code> to grab headers and <code class="inline">BeautifulSoup</code> to pull the raw body text from the web.</p>
+            <p><strong>Lines 52-65:</strong> The Agent's brain. Crucially, it calls <code class="inline">load_memory()</code> <em>before</em> thinking. This provides context, so the agent can avoid saving information it already knows.</p>
+            <p><strong>Lines 67-77:</strong> The Pipeline. It acts as a filter: Scraping → Analyzing → Selective Saving. This is the difference between a "scraper" and an "agent."</p>
           </div>
         </div>
       </div>
@@ -566,4 +582,5 @@
   <footer>Agentic AI Cookbook · Pattern 10</footer>
 
 </body>
+
 </html>
