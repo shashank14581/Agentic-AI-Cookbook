@@ -1,284 +1,730 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agentic Pattern 9f – Basic RAG Agent</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pattern 15 — Basic RAG Agent</title>
+
   <style>
-    /*
-      This page documents the simplest form of retrieval‑augmented generation (RAG).
-      Here the agent always retrieves relevant documents from a small in‑memory
-      vector store and instructs Gemini to answer only from that context. A calm
-      blue‑green palette distinguishes this pattern from the vector search variant.
-    */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      margin: 0;
-      font-family: "Inter", sans-serif;
-      background: #ebf8ff;
-      color: #1a365d;
-      line-height: 1.6;
+      font-family: Inter, Arial, sans-serif;
+      background: #fff8ef;
+      color: #182230;
+      overflow-x: hidden;
+      line-height: 1.7;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 217, 102, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 222, 214, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(255, 107, 53, 0.25), transparent 25%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(24, 34, 48, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 34, 48, 0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      z-index: -1;
+    }
+
     header {
-      background: linear-gradient(135deg, #63b3ed, #81e6d9);
-      color: white;
-      padding: 2rem 1rem;
-      text-align: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2.4rem;
-    }
-    header p {
-      margin-top: 0.5rem;
-      font-size: 1.05rem;
-      max-width: 760px;
-      margin-left: auto;
-      margin-right: auto;
-      color: #e6fffb;
-    }
-    .container {
+      padding: 70px 8%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      padding: 2.5rem;
-      max-width: 1400px;
-      margin: auto;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
     }
-    .code-pane {
-      background: #e0f2fe;
-      border: 1px solid #bee3f8;
-      border-radius: 12px;
-      padding: 1.5rem;
+
+    .hero-left h1 {
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      margin-bottom: 24px;
+      font-weight: 1000;
+    }
+
+    .hero-left h1 span {
+      color: #ff6b35;
+      text-shadow: 5px 5px 0 #182230;
+      -webkit-text-stroke: 2px #182230;
+    }
+
+    .hero-left p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #ffd966;
+      color: #182230;
+      border: 2px solid #182230;
+      box-shadow: 5px 5px 0 #182230;
+      margin-bottom: 24px;
+      font-weight: 1000;
+      font-size: 0.88rem;
+    }
+
+    .pill span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff6b35;
+      border: 2px solid #182230;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 38px;
+      border: 3px solid #182230;
+      box-shadow: 12px 12px 0 #182230;
+      padding: 28px;
+      transform: rotate(2deg);
+    }
+
+    .hero-face {
+      height: 210px;
+      border-radius: 30px;
+      border: 3px solid #182230;
+      background:
+        radial-gradient(circle at 35% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 68%, #ff6b35 0 36px, transparent 37px),
+        #ffd966;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .hero-face::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      border: 6px solid #182230;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-card p {
+      color: #475467;
+      font-weight: 700;
+    }
+
+    .json-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .json-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 1000;
+      color: #182230;
+    }
+
+    .json-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+      background: #ff6b35;
+      flex: 0 0 auto;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 8%;
+      border-top: 2px solid #182230;
+      border-bottom: 2px solid #182230;
+      display: flex;
+      gap: 14px;
       overflow-x: auto;
+      white-space: nowrap;
     }
-    .code-pane pre {
-      margin: 0;
-      font-family: "Fira Code", monospace;
+
+    nav a {
+      text-decoration: none;
+      color: #182230;
+      background: white;
+      border: 2px solid #182230;
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
       font-size: 0.9rem;
+    }
+
+    nav a:hover {
+      background: #ffd966;
+    }
+
+    main {
+      max-width: 1360px;
+      margin: auto;
+      padding: 70px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .section-title span {
+      background: #ff6b35;
+      color: #182230;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #182230;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.84rem;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 1000;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      padding: 30px;
+    }
+
+    .summary p {
+      color: #475467;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .code-block {
+      border-radius: 36px;
+      overflow: hidden;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      background: #182230;
+    }
+
+    .code-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 1000;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+    }
+
+    .window-dots span:nth-child(1) { background: #ff6b35; }
+    .window-dots span:nth-child(2) { background: #ffd966; }
+    .window-dots span:nth-child(3) { background: #65ded6; }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 22px;
+      overflow-x: auto;
+      background: #182230;
+      max-height: 920px;
+    }
+
+    .code-block code {
+      display: block;
+      font-family: "Courier New", monospace;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: #fff8ef;
+      counter-reset: line;
+      font-weight: 700;
+    }
+
+    .code-block code span {
+      display: block;
       white-space: pre;
     }
-    .explanation-pane {
-      background: #f0fff4;
-      border: 1px solid #c6f6d5;
-      border-radius: 12px;
-      padding: 1.5rem;
+
+    .code-block code span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 34px;
+      margin-right: 14px;
+      color: #ffd966;
+      opacity: 0.95;
+      user-select: none;
     }
-    .explanation-pane h3 {
-      margin-top: 0;
-      color: #2f855a;
+
+    .explanation {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      overflow: hidden;
+      position: sticky;
+      top: 92px;
     }
-    .explanation-pane p {
-      margin: 0.75rem 0;
+
+    .explanation-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      font-weight: 1000;
     }
-    .explanation-pane ul {
-      margin: 0.5rem 0 0.75rem 1.2rem;
+
+    .explanation-content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
     }
+
+    .explanation-content p {
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 5px 5px 0 #182230;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .explanation-content strong {
+      color: #ff6b35;
+    }
+
+    code.inline {
+      background: #ffd966;
+      color: #182230;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #182230;
+      font-weight: 1000;
+    }
+
+    .next-box {
+      background: #182230;
+      color: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #ff6b35;
+      padding: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .next-box h2 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 2.5rem;
+    }
+
+    .next-box p {
+      color: #f2f4f7;
+      max-width: 760px;
+      font-weight: 700;
+    }
+
+    .next-box a {
+      text-decoration: none;
+      background: #ffd966;
+      color: #182230;
+      border-radius: 999px;
+      border: 2px solid white;
+      box-shadow: 5px 5px 0 white;
+      padding: 12px 18px;
+      font-weight: 1000;
+    }
+
     footer {
       text-align: center;
-      padding: 1.5rem;
-      background: #1a365d;
-      color: #bee3f8;
+      padding: 42px 20px;
+      background: #182230;
+      color: white;
+      font-weight: 1000;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 980px) {
+      header { grid-template-columns: 1fr; }
+      .code-layout { grid-template-columns: 1fr; }
+      .explanation { position: static; }
     }
   </style>
 </head>
+
 <body>
+
   <header>
-    <h1>Pattern 9f – Basic RAG Agent</h1>
-    <p>This agent retrieves documents from a small vector store before answering. It then asks Gemini to respond using only the retrieved context.</p>
+    <div class="hero-left">
+      <div class="pill">
+        <span></span>
+        Pattern 9f · Basic RAG
+      </div>
+      <h1>Basic <span>RAG Agent</span></h1>
+      <p>
+        This pattern teaches the simplest retrieval-augmented generation loop. The agent stores a small knowledge base, retrieves the most relevant documents using vector similarity, and asks Gemini to answer only from the retrieved context.
+      </p>
+    </div>
+
+    <div class="hero-card">
+      <div class="hero-face"></div>
+      <h2>Retrieve. Ground. Answer.</h2>
+      <p>The smallest useful RAG pattern: vector memory plus a guarded generation prompt.</p>
+      <div class="json-stack">
+        <div class="json-row"><span class="json-dot"></span> Build RAG Memory</div>
+        <div class="json-row"><span class="json-dot"></span> Retrieve Top Context</div>
+        <div class="json-row"><span class="json-dot"></span> Answer Without Guessing</div>
+      </div>
+    </div>
   </header>
-  <div class="container">
-    <div class="code-pane">
-      <pre><code>
-1 import&nbsp;os
-2 import&nbsp;torch
-3 import&nbsp;torch.nn&nbsp;as&nbsp;nn
-4 import&nbsp;torch.nn.functional&nbsp;as&nbsp;F
-5 from&nbsp;google&nbsp;import&nbsp;genai
-6 from&nbsp;google.genai&nbsp;import&nbsp;types
-7 
-8 os.environ["GEMINI_API_KEY"]&nbsp;=&nbsp;"your_api_key"
-9 
-10 class SimpleEmbeddingModel(nn.Module):
-11   &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;vocab_size,&nbsp;embedding_dim=32):
-12   &nbsp;&nbsp;&nbsp;&nbsp;super().__init__()
-13   &nbsp;&nbsp;&nbsp;&nbsp;self.embedding&nbsp;=&nbsp;nn.Embedding(vocab_size,&nbsp;embedding_dim)
-14   
-15   &nbsp;&nbsp;def&nbsp;forward(self,&nbsp;token_ids):
-16   &nbsp;&nbsp;&nbsp;&nbsp;word_embeddings&nbsp;=&nbsp;self.embedding(token_ids)
-17   &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;word_embeddings.mean(dim=0)
-18 
-19 class RAGMemory:
-20   &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;embedding_dim=32):
-21   &nbsp;&nbsp;&nbsp;&nbsp;self.word_to_id&nbsp;=&nbsp;{"&lt;UNK&gt;":&nbsp;0}
-22   &nbsp;&nbsp;&nbsp;&nbsp;self.embedding_dim&nbsp;=&nbsp;embedding_dim
-23   &nbsp;&nbsp;&nbsp;&nbsp;self.model&nbsp;=&nbsp;None
-24   &nbsp;&nbsp;&nbsp;&nbsp;self.store&nbsp;=&nbsp;[]
-25 
-26   &nbsp;&nbsp;def&nbsp;build_vocab(self,&nbsp;texts):
-27   &nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;text&nbsp;in&nbsp;texts:
-28   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;word&nbsp;in&nbsp;text.lower().split():
-29   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;word&nbsp;not&nbsp;in&nbsp;self.word_to_id:
-30   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.word_to_id[word]&nbsp;=&nbsp;len(self.word_to_id)
-31 
-32   &nbsp;&nbsp;def&nbsp;encode_text(self,&nbsp;text):
-33   &nbsp;&nbsp;&nbsp;&nbsp;token_ids&nbsp;=&nbsp;[
-34   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.word_to_id.get(word,&nbsp;0)
-35   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;word&nbsp;in&nbsp;text.lower().split()
-36   &nbsp;&nbsp;&nbsp;&nbsp;]
-37   &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;torch.tensor(token_ids,&nbsp;dtype=torch.long)
-38 
-39   &nbsp;&nbsp;def&nbsp;build_index(self,&nbsp;knowledge_base):
-40   &nbsp;&nbsp;&nbsp;&nbsp;self.build_vocab(knowledge_base)
-41   &nbsp;&nbsp;&nbsp;&nbsp;self.model&nbsp;=&nbsp;SimpleEmbeddingModel(
-42   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vocab_size&nbsp;=&nbsp;len(self.word_to_id),
-43   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;embedding_dim&nbsp;=&nbsp;self.embedding_dim
-44   &nbsp;&nbsp;&nbsp;&nbsp;)
-45   &nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;i,&nbsp;text&nbsp;in&nbsp;enumerate(knowledge_base,&nbsp;start=1):
-46   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;token_ids&nbsp;=&nbsp;self.encode_text(text)
-47   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;torch.no_grad():
-48   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;embedding&nbsp;=&nbsp;self.model(token_ids)
-49   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.store.append({
-50   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"doc_id":&nbsp;f"doc_{i}",
-51   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"text":&nbsp;text,
-52   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"embedding":&nbsp;embedding
-53   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;})
-54   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f"Indexed&nbsp;doc_{i}")
-55 
-56   &nbsp;&nbsp;def&nbsp;retrieve(self,&nbsp;query,&nbsp;top_k=3):
-57   &nbsp;&nbsp;&nbsp;&nbsp;query_ids&nbsp;=&nbsp;self.encode_text(query)
-58   &nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;torch.no_grad():
-59   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;query_embedding&nbsp;=&nbsp;self.model(query_ids)
-60   &nbsp;&nbsp;&nbsp;&nbsp;results&nbsp;=&nbsp;[]
-61   &nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;item&nbsp;in&nbsp;self.store:
-62   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;score&nbsp;=&nbsp;F.cosine_similarity(
-63   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;query_embedding.unsqueeze(0),
-64   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;item["embedding"].unsqueeze(0)
-65   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;).item()
-66   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;results.append((score,&nbsp;item))
-67   &nbsp;&nbsp;&nbsp;&nbsp;results&nbsp;=&nbsp;sorted(results,&nbsp;key=lambda&nbsp;x:&nbsp;x[0],&nbsp;reverse=True)
-68   &nbsp;&nbsp;&nbsp;&nbsp;context&nbsp;=&nbsp;""
-69   &nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;score,&nbsp;item&nbsp;in&nbsp;results[:top_k]:
-70   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context&nbsp;+=&nbsp;f"""
-71   Document:&nbsp;{item["doc_id"]}
-72   Similarity:&nbsp;{round(score,&nbsp;4)}
-73   Text:&nbsp;{item["text"]}
-74   """
-75   &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;context
-76 
-77 class BaseAgent:
-78   &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;name,&nbsp;sys_prompt,&nbsp;rag_memory,&nbsp;model="gemini-flash-latest"):
-79   &nbsp;&nbsp;&nbsp;&nbsp;self.name&nbsp;=&nbsp;name
-80   &nbsp;&nbsp;&nbsp;&nbsp;self.sys_prompt&nbsp;=&nbsp;sys_prompt
-81   &nbsp;&nbsp;&nbsp;&nbsp;self.rag_memory&nbsp;=&nbsp;rag_memory
-82   &nbsp;&nbsp;&nbsp;&nbsp;self.memory&nbsp;=&nbsp;[]
-83   &nbsp;&nbsp;&nbsp;&nbsp;self.client&nbsp;=&nbsp;genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-84   &nbsp;&nbsp;&nbsp;&nbsp;self.model&nbsp;=&nbsp;model
-85 
-86   &nbsp;&nbsp;def&nbsp;think(self,&nbsp;question):
-87   &nbsp;&nbsp;&nbsp;&nbsp;retrieved_context&nbsp;=&nbsp;self.rag_memory.retrieve(
-88   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;query&nbsp;=&nbsp;question,
-89   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;top_k=3
-90   &nbsp;&nbsp;&nbsp;&nbsp;)
-91   &nbsp;&nbsp;&nbsp;&nbsp;final_input&nbsp;=&nbsp;f"""
-92   You are a Retrieval‑Augmented Generation agent.
-93   
-94   You must answer using only the retrieved context.
-95   
-96   Retrieved Context:
-97   {retrieved_context}
-98   
-99   Question:
-100   {question}
-101   
-102   Rules:
-103   - Use only the retrieved context.
-104   - Do not use outside knowledge.
-105   - If the answer is missing, say: "I do not have enough context to answer."
-106   """
-107   &nbsp;&nbsp;&nbsp;&nbsp;contents&nbsp;=&nbsp;[
-108   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;types.Content(
-109   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;role="user",
-110   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;parts=[types.Part.from_text(text=final_input)]
-111   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
-112   &nbsp;&nbsp;&nbsp;&nbsp;]
-113   &nbsp;&nbsp;&nbsp;&nbsp;config&nbsp;=&nbsp;types.GenerateContentConfig(
-114   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;thinking_config=types.ThinkingConfig(thinking_budget=0),
-115   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;system_instruction=[types.Part.from_text(text&nbsp;=&nbsp;self.sys_prompt)]
-116   &nbsp;&nbsp;&nbsp;&nbsp;)
-117   &nbsp;&nbsp;&nbsp;&nbsp;response&nbsp;=&nbsp;""
-118   &nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;chunk&nbsp;in&nbsp;self.client.models.generate_content_stream(
-119   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model=self.model,
-120   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;contents=contents,
-121   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;config=config
-122   &nbsp;&nbsp;&nbsp;&nbsp;):
-123   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;chunk.text:
-124   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(chunk.text,&nbsp;end="")
-125   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;response&nbsp;+=&nbsp;chunk.text
-126   &nbsp;&nbsp;&nbsp;&nbsp;print()
-127   &nbsp;&nbsp;&nbsp;&nbsp;self.memory.append((question,&nbsp;response))
-128   &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;response
-129 
-130 class BasicRAGAgent(BaseAgent):
-131   &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;name,&nbsp;rag_memory):
-132   &nbsp;&nbsp;&nbsp;&nbsp;super().__init__(
-133   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name,
-134   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""
-135   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You are a Basic RAG Agent.
-136   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-137   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You retrieve relevant information before answering.
-138   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You answer only from the retrieved context.
-139   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;You do not hallucinate.
-140   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;""",
-141   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rag_memory
-142   &nbsp;&nbsp;&nbsp;&nbsp;)
-143 
-144 def orchestrate(agent,&nbsp;questions):
-145   &nbsp;&nbsp;for&nbsp;question&nbsp;in&nbsp;questions:
-146   &nbsp;&nbsp;&nbsp;&nbsp;print(f"\nUser:&nbsp;{question}")
-147   &nbsp;&nbsp;&nbsp;&nbsp;print(f"{agent.name}:&nbsp;",&nbsp;end="")
-148   &nbsp;&nbsp;&nbsp;&nbsp;agent.think(question)
-149 
-150 if&nbsp;__name__&nbsp;==&nbsp;"__main__":
-151   &nbsp;&nbsp;knowledge_base&nbsp;=&nbsp;[
-152   &nbsp;&nbsp;&nbsp;&nbsp;"Project Sarayu uses Blue Mango as its internal codename for the customer retention model.",
-153   &nbsp;&nbsp;&nbsp;&nbsp;"In Project Sarayu, the Blue Mango model is refreshed every Thursday at 2 AM IST.",
-154   &nbsp;&nbsp;&nbsp;&nbsp;"The fallback owner for Blue Mango failures is Aniket from the DS Ops team.",
-155   &nbsp;&nbsp;&nbsp;&nbsp;"Blue Mango uses three private signals: Lantern Score, River Index, and Basket Drift.",
-156   &nbsp;&nbsp;&nbsp;&nbsp;"The River Index measures how sharply a customer's category interest changes over seven days.",
-157   &nbsp;&nbsp;&nbsp;&nbsp;"Basket Drift is triggered when a customer's purchase pattern shifts away from their usual class cluster.",
-158   &nbsp;&nbsp;&nbsp;&nbsp;"Lantern Score is used to identify customers who are likely to re‑engage after a silent period.",
-159   &nbsp;&nbsp;&nbsp;&nbsp;"Project Sarayu sends its final audience output to the table analytics_private.sarayu.final_audience.",
-160   &nbsp;&nbsp;&nbsp;&nbsp;"If Blue Mango confidence drops below 0.62, the system must route the audience to manual review.",
-161   &nbsp;&nbsp;&nbsp;&nbsp;"The manual review queue for Project Sarayu is called the Silver Gate queue."
-162   &nbsp;&nbsp;]
-163   &nbsp;&nbsp;rag_memory&nbsp;=&nbsp;RAGMemory(embedding_dim=32)
-164   &nbsp;&nbsp;rag_memory.build_index(knowledge_base)
-165   &nbsp;&nbsp;agent&nbsp;=&nbsp;BasicRAGAgent(name="BasicRAGAgent",&nbsp;rag_memory=rag_memory)
-166   &nbsp;&nbsp;questions&nbsp;=&nbsp;[
-167   &nbsp;&nbsp;&nbsp;&nbsp;"What is Blue Mango?",
-168   &nbsp;&nbsp;&nbsp;&nbsp;"Who owns Blue Mango failures?",
-169   &nbsp;&nbsp;&nbsp;&nbsp;"What happens if confidence drops below 0.62?",
-170   &nbsp;&nbsp;&nbsp;&nbsp;"What is the Silver Gate queue?"
-171   &nbsp;&nbsp;]
-172   &nbsp;&nbsp;orchestrate(agent,&nbsp;questions)
-      </code></pre>
-    </div>
-    <div class="explanation-pane">
-      <h3>Embedding &amp; Memory</h3>
-      <p>The <code>SimpleEmbeddingModel</code> takes a vocabulary size and outputs an average embedding for any list of token IDs. The RAG memory builds a vocabulary from the knowledge base, constructs the embedding model, and stores each document with its vector representation.</p>
-      <p>The <code>build_index()</code> method tokenises each document, computes an embedding using <code>SimpleEmbeddingModel</code>, and appends a record containing the document ID, text and embedding to the <code>store</code>.</p>
-      <h3>Retrieval</h3>
-      <p>When a query arrives, <code>RAGMemory.retrieve()</code> encodes the query, computes its embedding and calculates cosine similarity against each stored document. The top&nbsp;<code>k</code> results are formatted into a human‑readable context that includes document identifiers, similarity scores and the original text.</p>
-      <h3>Agent Thinking</h3>
-      <p>The <code>BaseAgent</code> receives a question, calls <code>retrieve()</code> on the RAG memory and builds a final prompt instructing Gemini to answer using <em>only</em> the retrieved context. It prints and collects the model’s streamed response.</p>
-      <p>The derived <code>BasicRAGAgent</code> simply sets a helpful system prompt: it reminds the model that it is a RAG agent and must not hallucinate outside the retrieved data.</p>
-      <h3>Running the Example</h3>
-      <p>In the <code>__main__</code> block a knowledge base of project facts is indexed and a <code>BasicRAGAgent</code> is created. The <code>orchestrate</code> function loops through a list of user questions, prints each question and hands control to the agent. The agent will always retrieve context before generating an answer.</p>
-    </div>
-  </div>
-  <footer>
-    <p>Agentic pattern 9f: illustrate a simple retrieval‑augmented generation agent.</p>
-  </footer>
+
+  <nav>
+    <a href="#summary">Summary</a>
+    <a href="#walkthrough">Code Walkthrough</a>
+    <a href="#next">Next Pattern</a>
+  </nav>
+
+  <main>
+    <section id="summary">
+      <div class="section-title">
+        <span>OVERVIEW</span>
+        <h2>What this pattern teaches</h2>
+      </div>
+      <div class="summary">
+        <p>
+          <strong>Pattern 9f</strong> is the first clean RAG agent pattern. The agent does not directly answer from its own model knowledge. It first searches a small local knowledge base, collects the top matching records, and sends those records into the final prompt as grounding context.
+        </p>
+        <p>
+          This is simpler than the later vector-search patterns. There is no separate index class here. The <code class="inline">RAGMemory</code> object owns vocabulary creation, encoding, embedding, storage, retrieval, and context formatting. That makes it ideal as the first mental model for RAG.
+        </p>
+      </div>
+    </section>
+
+    <section id="walkthrough">
+      <div class="section-title">
+        <span>CODE</span>
+        <h2>Line-by-line walkthrough</h2>
+      </div>
+
+      <div class="code-layout">
+        <div class="code-block">
+          <div class="code-header">
+            <span>pattern9f_basic_rag_agent.py</span>
+            <div class="window-dots"><span></span><span></span><span></span></div>
+          </div>
+          <pre><code><span>import os</span>
+<span>import torch</span>
+<span>import torch.nn as nn</span>
+<span>import torch.nn.functional as F</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+<span></span>
+<span>os.environ["GEMINI_API_KEY"] = "your_api_key"</span>
+<span></span>
+<span></span>
+<span>class SimpleEmbeddingModel(nn.Module):</span>
+<span>    def __init__(self, vocab_size, embedding_dim=32):</span>
+<span>        super().__init__()</span>
+<span>        self.embedding = nn.Embedding(vocab_size, embedding_dim)</span>
+<span></span>
+<span>    def forward(self, token_ids):</span>
+<span>        word_embeddings = self.embedding(token_ids)</span>
+<span>        return word_embeddings.mean(dim=0)</span>
+<span></span>
+<span></span>
+<span>class RAGMemory:</span>
+<span>    def __init__(self, embedding_dim=32):</span>
+<span>        self.word_to_id = {"&lt;UNK&gt;": 0}</span>
+<span>        self.embedding_dim = embedding_dim</span>
+<span>        self.model = None</span>
+<span>        self.store = []</span>
+<span></span>
+<span>    def build_vocab(self, texts):</span>
+<span>        for text in texts:</span>
+<span>            for word in text.lower().split():</span>
+<span>                if word not in self.word_to_id:</span>
+<span>                    self.word_to_id[word] = len(self.word_to_id)</span>
+<span></span>
+<span>    def encode_text(self, text):</span>
+<span>        token_ids = [</span>
+<span>            self.word_to_id.get(word, 0)</span>
+<span>            for word in text.lower().split()</span>
+<span>        ]</span>
+<span>        return torch.tensor(token_ids, dtype=torch.long)</span>
+<span></span>
+<span>    def build_index(self, knowledge_base):</span>
+<span>        self.build_vocab(knowledge_base)</span>
+<span></span>
+<span>        self.model = SimpleEmbeddingModel(</span>
+<span>            vocab_size=len(self.word_to_id),</span>
+<span>            embedding_dim=self.embedding_dim</span>
+<span>        )</span>
+<span></span>
+<span>        for i, text in enumerate(knowledge_base, start=1):</span>
+<span>            token_ids = self.encode_text(text)</span>
+<span></span>
+<span>            with torch.no_grad():</span>
+<span>                embedding = self.model(token_ids)</span>
+<span></span>
+<span>            self.store.append({</span>
+<span>                "doc_id": f"doc_{i}",</span>
+<span>                "text": text,</span>
+<span>                "embedding": embedding</span>
+<span>            })</span>
+<span></span>
+<span>            print(f"Indexed doc_{i}")</span>
+<span></span>
+<span>    def retrieve(self, query, top_k=3):</span>
+<span>        query_ids = self.encode_text(query)</span>
+<span></span>
+<span>        with torch.no_grad():</span>
+<span>            query_embedding = self.model(query_ids)</span>
+<span></span>
+<span>        results = []</span>
+<span></span>
+<span>        for item in self.store:</span>
+<span>            score = F.cosine_similarity(</span>
+<span>                query_embedding.unsqueeze(0),</span>
+<span>                item["embedding"].unsqueeze(0)</span>
+<span>            ).item()</span>
+<span></span>
+<span>            results.append((score, item))</span>
+<span></span>
+<span>        results = sorted(results, key=lambda x: x[0], reverse=True)</span>
+<span>        context = ""</span>
+<span></span>
+<span>        for score, item in results[:top_k]:</span>
+<span>            context += f"""</span>
+<span>Document: {item["doc_id"]}</span>
+<span>Similarity: {round(score, 4)}</span>
+<span>Text: {item["text"]}</span>
+<span>"""</span>
+<span></span>
+<span>        return context</span>
+<span></span>
+<span></span>
+<span>class BaseAgent:</span>
+<span>    def __init__(self, name, sys_prompt, rag_memory, model="gemini-flash-latest"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.rag_memory = rag_memory</span>
+<span>        self.memory = []</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+<span></span>
+<span>    def think(self, question):</span>
+<span>        retrieved_context = self.rag_memory.retrieve(</span>
+<span>            query=question,</span>
+<span>            top_k=3</span>
+<span>        )</span>
+<span></span>
+<span>        final_input = f"""</span>
+<span>You are a Retrieval-Augmented Generation agent.</span>
+<span></span>
+<span>You must answer using only the retrieved context.</span>
+<span></span>
+<span>Retrieved Context:</span>
+<span>{retrieved_context}</span>
+<span></span>
+<span>Question:</span>
+<span>{question}</span>
+<span></span>
+<span>Rules:</span>
+<span>- Use only the retrieved context.</span>
+<span>- Do not use outside knowledge.</span>
+<span>- If the answer is missing, say: "I do not have enough context to answer."</span>
+<span>"""</span>
+<span></span>
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=final_input)]</span>
+<span>            )</span>
+<span>        ]</span>
+<span></span>
+<span>        config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span>
+<span>        )</span>
+<span></span>
+<span>        response = ""</span>
+<span></span>
+<span>        for chunk in self.client.models.generate_content_stream(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
+<span>        ):</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="")</span>
+<span>                response += chunk.text</span>
+<span></span>
+<span>        print()</span>
+<span>        self.memory.append((question, response))</span>
+<span>        return response</span>
+<span></span>
+<span></span>
+<span>class BasicRAGAgent(BaseAgent):</span>
+<span>    def __init__(self, name, rag_memory):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            """</span>
+<span>You are a Basic RAG Agent.</span>
+<span></span>
+<span>You retrieve relevant information before answering.</span>
+<span>You answer only from the retrieved context.</span>
+<span>You do not hallucinate.</span>
+<span>""",</span>
+<span>            rag_memory</span>
+<span>        )</span>
+<span></span>
+<span></span>
+<span>def orchestrate(agent, questions):</span>
+<span>    for question in questions:</span>
+<span>        print(f"\nUser: {question}")</span>
+<span>        print(f"{agent.name}: ", end="")</span>
+<span>        agent.think(question)</span>
+<span></span>
+<span></span>
+<span>if __name__ == "__main__":</span>
+<span>    knowledge_base = [</span>
+<span>        "Project Sarayu uses Blue Mango as its internal codename for the customer retention model.",</span>
+<span>        "In Project Sarayu, the Blue Mango model is refreshed every Thursday at 2 AM IST.",</span>
+<span>        "The fallback owner for Blue Mango failures is Aniket from the DS Ops team.",</span>
+<span>        "Blue Mango uses three private signals: Lantern Score, River Index, and Basket Drift.",</span>
+<span>        "The River Index measures how sharply a customer's category interest changes over seven days.",</span>
+<span>        "Basket Drift is triggered when a customer's purchase pattern shifts away from their usual class cluster.",</span>
+<span>        "Lantern Score is used to identify customers who are likely to re-engage after a silent period.",</span>
+<span>        "Project Sarayu sends its final audience output to the table analytics_private.sarayu.final_audience.",</span>
+<span>        "If Blue Mango confidence drops below 0.62, the system must route the audience to manual review.",</span>
+<span>        "The manual review queue for Project Sarayu is called the Silver Gate queue."</span>
+<span>    ]</span>
+<span></span>
+<span>    rag_memory = RAGMemory(embedding_dim=32)</span>
+<span>    rag_memory.build_index(knowledge_base)</span>
+<span></span>
+<span>    agent = BasicRAGAgent(</span>
+<span>        name="BasicRAGAgent",</span>
+<span>        rag_memory=rag_memory</span>
+<span>    )</span>
+<span></span>
+<span>    questions = [</span>
+<span>        "What is Blue Mango?",</span>
+<span>        "Who owns Blue Mango failures?",</span>
+<span>        "What happens if confidence drops below 0.62?",</span>
+<span>        "What is the Silver Gate queue?"</span>
+<span>    ]</span>
+<span></span>
+<span>    orchestrate(agent, questions)</span></code></pre>
+        </div>
+
+        <div class="explanation">
+          <div class="explanation-header">Mental Model</div>
+          <div class="explanation-content">
+            <p><strong>Lines 1-8:</strong> Import PyTorch, Gemini SDK components, and set a placeholder API key. For GitHub, avoid committing real keys; load them from environment variables.</p>
+            <p><strong>Lines 11-18:</strong> <code class="inline">SimpleEmbeddingModel</code> turns token IDs into vectors. It averages word vectors so each document becomes one compact vector.</p>
+            <p><strong>Lines 21-39:</strong> <code class="inline">RAGMemory</code> starts with an unknown-token ID, stores embedding settings, and defines how text becomes token IDs.</p>
+            <p><strong>Lines 41-63:</strong> <code class="inline">build_index()</code> builds the vocabulary, initializes the embedding model, embeds every knowledge-base record, and stores the document text with its vector.</p>
+            <p><strong>Lines 65-91:</strong> <code class="inline">retrieve()</code> embeds the user question, compares it with every stored document using cosine similarity, sorts by relevance, and formats the top matches into context.</p>
+            <p><strong>Lines 94-161:</strong> <code class="inline">BaseAgent</code> is the RAG loop: retrieve context, build a strict prompt, stream Gemini's response, and save the question-answer pair.</p>
+            <p><strong>Lines 164-178:</strong> <code class="inline">BasicRAGAgent</code> specializes the base agent with a system prompt that says: retrieve first, answer only from context, and do not hallucinate.</p>
+            <p><strong>Lines 181-215:</strong> The main block builds a small private knowledge base, indexes it, creates the agent, and sends four test questions through the retrieval-before-generation flow.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="next">
+      <div class="next-box">
+        <div>
+          <h2>Next Step: Stronger Retrieval Patterns</h2>
+          <p>After this basic RAG loop, the next patterns can separate memory from index, add chunking, improve retrieval quality, and eventually connect the agent to external tools or MCP servers.</p>
+        </div>
+        <a href="pattern9g.html">Open Pattern 9g →</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>Agentic AI Cookbook · Pattern 9f</footer>
+
 </body>
 </html>
