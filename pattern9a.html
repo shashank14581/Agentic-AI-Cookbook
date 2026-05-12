@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern&nbsp;9a – Long‑Term Memory Agent</title>
+  <style>
+    /*
+      This page explains the long‑term memory pattern where an agent reads
+      external news, extracts insights, and stores them in a SQLite database
+      for future use. The left column shows the full Python code and the
+      right column breaks down each component of the implementation.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", Arial, sans-serif;
+      background: #f2fdfb;
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #34d399, #6ee7b7);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1400px;
+      margin: auto;
+    }
+    .code-col {
+      background: white;
+      border: 1px solid #d1fae5;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .code-col pre {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      background: #f0fdf4;
+    }
+    .code-col .line {
+      display: block;
+    }
+    .code-col .num {
+      display: inline-block;
+      width: 2.6rem;
+      color: #6b7280;
+      user-select: none;
+    }
+    .explain-col {
+      background: white;
+      border: 1px solid #d1fae5;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .explain-col h2 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      color: #059669;
+    }
+    .explain-col h3 {
+      margin-top: 1.2rem;
+      font-size: 1.25rem;
+      color: #047857;
+    }
+    .explain-col p, .explain-col li {
+      font-size: 0.96rem;
+    }
+    .explain-col ul {
+      margin-top: 0.5rem;
+      padding-left: 1.2rem;
+    }
+    .explain-col li {
+      margin-bottom: 0.4rem;
+    }
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern&nbsp;9a – Long‑Term Memory Agent</h1>
+    <p>
+      This pattern illustrates how an agent can develop long‑term memory by
+      reading external news articles, deciding whether an insight is
+      important, and saving valuable information into a SQLite database.
+      Over time, the agent builds a knowledge base to enhance future
+      analysis.
+    </p>
+  </header>
+  <main class="container">
+    <div class="code-col">
+      <pre>
+<span class="line"><span class="num">1</span><span class="content"># install dependencies (e.g. requests, beautifulsoup4, feedparser)</span></span>
+<span class="line"><span class="num">2</span><span class="content">import os</span></span>
+<span class="line"><span class="num">3</span><span class="content">import sqlite3</span></span>
+<span class="line"><span class="num">4</span><span class="content">import requests</span></span>
+<span class="line"><span class="num">5</span><span class="content">import feedparser</span></span>
+<span class="line"><span class="num">6</span><span class="content">from bs4 import BeautifulSoup</span></span>
+<span class="line"><span class="num">7</span><span class="content">from google import genai</span></span>
+<span class="line"><span class="num">8</span><span class="content">from google.genai import types</span></span>
+
+<span class="line"><span class="num">11</span><span class="content"># initialize the database</span></span>
+<span class="line"><span class="num">12</span><span class="content">def init_db():</span></span>
+<span class="line"><span class="num">13</span><span class="content">    conn = sqlite3.connect("agent_memory.db")</span></span>
+<span class="line"><span class="num">14</span><span class="content">    cursor = conn.cursor()</span></span>
+<span class="line"><span class="num">15</span><span class="content">    cursor.execute("""</span></span>
+<span class="line"><span class="num">16</span><span class="content">    CREATE TABLE IF NOT EXISTS memory (</span></span>
+<span class="line"><span class="num">17</span><span class="content">        id INTEGER PRIMARY KEY AUTOINCREMENT,</span></span>
+<span class="line"><span class="num">18</span><span class="content">        content TEXT,</span></span>
+<span class="line"><span class="num">19</span><span class="content">        source TEXT,</span></span>
+<span class="line"><span class="num">20</span><span class="content">        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP</span></span>
+<span class="line"><span class="num">21</span><span class="content">    )</span></span>
+<span class="line"><span class="num">22</span><span class="content">    """)</span></span>
+<span class="line"><span class="num">23</span><span class="content">    conn.commit()</span></span>
+<span class="line"><span class="num">24</span><span class="content">    conn.close()</span></span>
+
+<span class="line"><span class="num">27</span><span class="content">def save_to_db(content, source):</span></span>
+<span class="line"><span class="num">28</span><span class="content">    conn = sqlite3.connect("agent_memory.db")</span></span>
+<span class="line"><span class="num">29</span><span class="content">    cursor = conn.cursor()</span></span>
+<span class="line"><span class="num">30</span><span class="content">    cursor.execute("""</span></span>
+<span class="line"><span class="num">31</span><span class="content">        INSERT INTO memory (content, source)</span></span>
+<span class="line"><span class="num">32</span><span class="content">        VALUES (?, ?)</span></span>
+<span class="line"><span class="num">33</span><span class="content">    """, (content, source))</span></span>
+<span class="line"><span class="num">34</span><span class="content">    conn.commit()</span></span>
+<span class="line"><span class="num">35</span><span class="content">    conn.close()</span></span>
+
+<span class="line"><span class="num">38</span><span class="content">def load_memory(limit=5):</span></span>
+<span class="line"><span class="num">39</span><span class="content">    conn = sqlite3.connect("agent_memory.db")</span></span>
+<span class="line"><span class="num">40</span><span class="content">    cursor = conn.cursor()</span></span>
+<span class="line"><span class="num">41</span><span class="content">    cursor.execute("""</span></span>
+<span class="line"><span class="num">42</span><span class="content">        SELECT content FROM memory</span></span>
+<span class="line"><span class="num">43</span><span class="content">        ORDER BY created_at DESC</span></span>
+<span class="line"><span class="num">44</span><span class="content">        LIMIT ?</span></span>
+<span class="line"><span class="num">45</span><span class="content">    """, (limit,))</span></span>
+<span class="line"><span class="num">46</span><span class="content">    rows = cursor.fetchall()</span></span>
+<span class="line"><span class="num">47</span><span class="content">    conn.close()</span></span>
+<span class="line"><span class="num">48</span><span class="content">    return [r[0] for r in rows]</span></span>
+
+<span class="line"><span class="num">52</span><span class="content"># fetch top news items via RSS</span></span>
+<span class="line"><span class="num">53</span><span class="content">def fetch_news():</span></span>
+<span class="line"><span class="num">54</span><span class="content">    feed = feedparser.parse("http://feeds.bbci.co.uk/news/rss.xml")</span></span>
+<span class="line"><span class="num">55</span><span class="content">    articles = []</span></span>
+<span class="line"><span class="num">56</span><span class="content">    for entry in feed.entries[:5]:</span></span>
+<span class="line"><span class="num">57</span><span class="content">        articles.append({</span></span>
+<span class="line"><span class="num">58</span><span class="content">            "title": entry.title,</span></span>
+<span class="line"><span class="num">59</span><span class="content">            "link": entry.link</span></span>
+<span class="line"><span class="num">60</span><span class="content">        })</span></span>
+<span class="line"><span class="num">61</span><span class="content">    return articles</span></span>
+
+<span class="line"><span class="num">65</span><span class="content"># extract article text from web</span></span>
+<span class="line"><span class="num">66</span><span class="content">def extract_text(url):</span></span>
+<span class="line"><span class="num">67</span><span class="content">    try:</span></span>
+<span class="line"><span class="num">68</span><span class="content">        res = requests.get(url, timeout=5)</span></span>
+<span class="line"><span class="num">69</span><span class="content">        soup = BeautifulSoup(res.text, "html.parser")</span></span>
+<span class="line"><span class="num">70</span><span class="content">        paragraphs = soup.find_all("p")</span></span>
+<span class="line"><span class="num">71</span><span class="content">        text = " ".join([p.get_text() for p in paragraphs])</span></span>
+<span class="line"><span class="num">72</span><span class="content">        return text[:3000]  # trim to avoid token overflow</span></span>
+<span class="line"><span class="num">73</span><span class="content">    except:</span></span>
+<span class="line"><span class="num">74</span><span class="content">        return ""</span></span>
+
+<span class="line"><span class="num">100</span><span class="content"># Agent that extracts insights from articles</span></span>
+<span class="line"><span class="num">101</span><span class="content">class NewsAgent:</span></span>
+<span class="line"><span class="num">102</span><span class="content">    def __init__(self):</span></span>
+<span class="line"><span class="num">103</span><span class="content">        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span></span>
+<span class="line"><span class="num">104</span><span class="content">        self.model = "gemini-2.5-flash"</span></span>
+<span class="line"><span class="num">105</span><span class="content">    def think(self, article_text, title):</span></span>
+<span class="line"><span class="num">107</span><span class="content">        memory = "\n".join(load_memory())</span></span>
+<span class="line"><span class="num">108</span><span class="content">        prompt = f"""</span></span>
+<span class="line"><span class="num">109</span><span class="content">You are an intelligent analyst.</span></span>
+<span class="line"><span class="num">110</span><span class="content"></span></span>
+<span class="line"><span class="num">111</span><span class="content">Existing knowledge:</span></span>
+<span class="line"><span class="num">112</span><span class="content">{memory}</span></span>
+<span class="line"><span class="num">113</span><span class="content"></span></span>
+<span class="line"><span class="num">114</span><span class="content">Read this news and extract ONLY important insights worth remembering.</span></span>
+<span class="line"><span class="num">115</span><span class="content"></span></span>
+<span class="line"><span class="num">116</span><span class="content">Rules:</span></span>
+<span class="line"><span class="num">117</span><span class="content">- Ignore noise</span></span>
+<span class="line"><span class="num">118</span><span class="content">- Keep it short (1-2 lines)</span></span>
+<span class="line"><span class="num">119</span><span class="content">- Only store meaningful facts or trends</span></span>
+<span class="line"><span class="num">120</span><span class="content"></span></span>
+<span class="line"><span class="num">121</span><span class="content">News Title:</span></span>
+<span class="line"><span class="num">122</span><span class="content">{title}</span></span>
+<span class="line"><span class="num">123</span><span class="content"></span></span>
+<span class="line"><span class="num">124</span><span class="content">News Content:</span></span>
+<span class="line"><span class="num">125</span><span class="content">{article_text}</span></span>
+<span class="line"><span class="num">126</span><span class="content"></span></span>
+<span class="line"><span class="num">127</span><span class="content">Return:</span></span>
+<span class="line"><span class="num">128</span><span class="content">- "SKIP" if nothing important</span></span>
+<span class="line"><span class="num">129</span><span class="content">- Otherwise return insight</span></span>
+<span class="line"><span class="num">130</span><span class="content">"""</span></span>
+<span class="line"><span class="num">138</span><span class="content">        contents = [</span></span>
+<span class="line"><span class="num">139</span><span class="content">            types.Content(role="user", parts=[types.Part.from_text(text=prompt)])</span></span>
+<span class="line"><span class="num">140</span><span class="content">        ]</span></span>
+<span class="line"><span class="num">144</span><span class="content">        config = types.GenerateContentConfig(</span></span>
+<span class="line"><span class="num">145</span><span class="content">            thinking_config=types.ThinkingConfig(thinking_budget=0)</span></span>
+<span class="line"><span class="num">146</span><span class="content">        )</span></span>
+<span class="line"><span class="num">148</span><span class="content">        response = ""</span></span>
+<span class="line"><span class="num">150</span><span class="content">        for chunk in self.client.models.generate_content_stream(</span></span>
+<span class="line"><span class="num">151</span><span class="content">            model=self.model, contents=contents, config=config</span></span>
+<span class="line"><span class="num">152</span><span class="content">        ):</span></span>
+<span class="line"><span class="num">153</span><span class="content">            if chunk.text:</span></span>
+<span class="line"><span class="num">154</span><span class="content">                print(chunk.text, end="")</span></span>
+<span class="line"><span class="num">155</span><span class="content">                response += chunk.text</span></span>
+<span class="line"><span class="num">156</span><span class="content">        print("\n")</span></span>
+<span class="line"><span class="num">158</span><span class="content">        return response.strip()</span></span>
+
+<span class="line"><span class="num">165</span><span class="content"># Pipeline: fetch, analyse, save</span></span>
+<span class="line"><span class="num">166</span><span class="content">def run_pipeline():</span></span>
+<span class="line"><span class="num">167</span><span class="content">    init_db()</span></span>
+<span class="line"><span class="num">168</span><span class="content">    agent = NewsAgent()</span></span>
+<span class="line"><span class="num">170</span><span class="content">    articles = fetch_news()</span></span>
+<span class="line"><span class="num">172</span><span class="content">    for art in articles:</span></span>
+<span class="line"><span class="num">173</span><span class="content">        print(f"\n📰 Reading: {art['title']}")</span></span>
+<span class="line"><span class="num">174</span><span class="content">        text = extract_text(art["link"])</span></span>
+<span class="line"><span class="num">176</span><span class="content">        if not text:</span></span>
+<span class="line"><span class="num">177</span><span class="content">            print("Failed to extract text")</span></span>
+<span class="line"><span class="num">178</span><span class="content">            continue</span></span>
+<span class="line"><span class="num">182</span><span class="content">        insight = agent.think(text, art["title"])</span></span>
+<span class="line"><span class="num">184</span><span class="content">        if insight != "SKIP":</span></span>
+<span class="line"><span class="num">185</span><span class="content">            save_to_db(insight, art["link"])</span></span>
+<span class="line"><span class="num">186</span><span class="content">            print("Saved to DB")</span></span>
+<span class="line"><span class="num">187</span><span class="content">        else:</span></span>
+<span class="line"><span class="num">188</span><span class="content">            print("Skipped")</span></span>
+
+<span class="line"><span class="num">194</span><span class="content">run_pipeline()</span></span>
+      </pre>
+    </div>
+    <div class="explain-col">
+      <h2>Building Long‑Term Memory</h2>
+      <p>
+        This script constructs an agent that can read external news feeds,
+        distil them into concise insights, and persist those insights in a
+        database. It demonstrates how long‑term memory can enhance a
+        retrieval‑augmented agent by providing context from previous
+        observations.
+      </p>
+      <h3>Imports and Setup</h3>
+      <p>
+        The code begins by importing modules for HTTP requests, RSS parsing,
+        HTML extraction (<code>BeautifulSoup</code>), database access
+        (<code>sqlite3</code>), and the Gemini API. These libraries
+        support fetching news, scraping article text, and interacting with
+        the model.
+      </p>
+      <h3>Database Functions</h3>
+      <ul>
+        <li><strong>init_db()</strong> (lines&nbsp;12‑24) opens a
+          SQLite database file (<code>agent_memory.db</code>) and
+          ensures a table named <code>memory</code> exists. Each record
+          stores the insight text, its source URL, and a timestamp.</li>
+        <li><strong>save_to_db()</strong> (lines&nbsp;27‑35) inserts a new
+          insight into the database. The function accepts the text and
+          source and commits the transaction.</li>
+        <li><strong>load_memory()</strong> (lines&nbsp;38‑48) retrieves the
+          most recent <em>n</em> insights (default five) from the
+          database. The returned list is later used to provide context
+          when summarising new articles.</li>
+      </ul>
+      <h3>Fetching and Parsing News</h3>
+      <ul>
+        <li><strong>fetch_news()</strong> (lines&nbsp;53‑61) uses
+          <code>feedparser</code> to read the BBC News RSS feed. It
+          gathers the titles and links for the first five entries and
+          returns them as a list of dictionaries.</li>
+        <li><strong>extract_text()</strong> (lines&nbsp;66‑74) downloads the
+          article HTML and extracts all paragraph text into a single
+          string. It trims the output to 3000 characters to avoid
+          exceeding token limits. If the request fails, it returns
+          an empty string.</li>
+      </ul>
+      <h3>The <code>NewsAgent</code></h3>
+      <p>
+        The <code>NewsAgent</code> class (lines&nbsp;101‑158) holds a
+        Gemini client and defines a <code>think()</code> method to
+        summarise articles:
+      </p>
+      <ul>
+        <li>It concatenates recent memory entries using
+          <code>\n.join(load_memory())</code> (line&nbsp;107). This
+          ensures the agent remembers past insights when evaluating new
+          articles.</li>
+        <li>A prompt is assembled (lines&nbsp;108‑130) that instructs the
+          model to ignore noise and return only short, meaningful
+          insights. If nothing important is found, the model should
+          respond with the literal string <code>"SKIP"</code>.</li>
+        <li>The prompt is sent via
+          <code>generate_content_stream()</code> (lines&nbsp;150‑155),
+          streaming the response to stdout and concatenating it into a
+          final string. The method returns the trimmed response.</li>
+      </ul>
+      <h3>Pipeline Execution</h3>
+      <p>
+        The <code>run_pipeline()</code> function (lines&nbsp;166‑187) ties
+        everything together. It initialises the database, instantiates a
+        <code>NewsAgent</code>, and fetches the latest news articles.
+        For each article it:
+      </p>
+      <ul>
+        <li>Prints the title to provide context.</li>
+        <li>Extracts the full article text; if extraction fails, it
+          skips to the next article.</li>
+        <li>Asks the agent for an insight; if the response is not
+          <code>"SKIP"</code>, it saves the insight to the database and
+          indicates success, otherwise it notes that nothing worth
+          storing was found.</li>
+      </ul>
+      <p>
+        Finally, line&nbsp;194 calls <code>run_pipeline()</code> so the
+        process runs as soon as the script is executed. Over time the
+        database accumulates insights that can be retrieved and used by
+        future agents or queries.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
