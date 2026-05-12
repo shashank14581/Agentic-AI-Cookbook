@@ -6,7 +6,874 @@
   <title>Pattern 4: Agents Using Tools Explained</title>
   <style>
     body {
-      background: #F3FDF6;
+      background: #F3FDF6;<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pattern 4 — Agents Using Tools</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #fff8ef;
+      color: #182230;
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 217, 102, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 222, 214, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(255, 107, 53, 0.25), transparent 25%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(24, 34, 48, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 34, 48, 0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      z-index: -1;
+    }
+
+    header {
+      padding: 70px 8%;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .hero-left h1 {
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      margin-bottom: 24px;
+      font-weight: 1000;
+    }
+
+    .hero-left h1 span {
+      color: #ff6b35;
+      text-shadow: 5px 5px 0 #182230;
+      -webkit-text-stroke: 2px #182230;
+    }
+
+    .hero-left p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #65ded6;
+      color: #182230;
+      border: 2px solid #182230;
+      box-shadow: 5px 5px 0 #182230;
+      margin-bottom: 24px;
+      font-weight: 1000;
+      font-size: 0.88rem;
+    }
+
+    .pill span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff6b35;
+      border: 2px solid #182230;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 38px;
+      border: 3px solid #182230;
+      box-shadow: 12px 12px 0 #182230;
+      padding: 28px;
+      transform: rotate(2deg);
+    }
+
+    .hero-face {
+      height: 210px;
+      border-radius: 30px;
+      border: 3px solid #182230;
+      background:
+        radial-gradient(circle at 35% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 68%, #ff6b35 0 36px, transparent 37px),
+        #ffd966;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .hero-face::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      border: 6px solid #182230;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-card p {
+      color: #475467;
+      font-weight: 700;
+    }
+
+    .tool-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 1000;
+      color: #182230;
+    }
+
+    .tool-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+      background: #65ded6;
+      flex: 0 0 auto;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 8%;
+      border-top: 2px solid #182230;
+      border-bottom: 2px solid #182230;
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #182230;
+      background: white;
+      border: 2px solid #182230;
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.9rem;
+    }
+
+    nav a:hover {
+      background: #ffd966;
+    }
+
+    main {
+      max-width: 1360px;
+      margin: auto;
+      padding: 70px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .section-title span {
+      background: #ff6b35;
+      color: #182230;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #182230;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.84rem;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 1000;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      padding: 30px;
+    }
+
+    .summary p {
+      color: #475467;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .code-block {
+      border-radius: 36px;
+      overflow: hidden;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      background: #0000aa;
+    }
+
+    .code-header {
+      background: #65ded6;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 1000;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+    }
+
+    .window-dots span:nth-child(1) {
+      background: #ff6b35;
+    }
+
+    .window-dots span:nth-child(2) {
+      background: #ffd966;
+    }
+
+    .window-dots span:nth-child(3) {
+      background: #c6f777;
+    }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 22px;
+      overflow-x: auto;
+      background: #0000aa;
+    }
+
+    .code-block code {
+      display: block;
+      font-family: "Courier New", "Lucida Console", monospace;
+      font-size: 0.95rem;
+      line-height: 1.28;
+      color: white;
+      counter-reset: line;
+      font-weight: 700;
+    }
+
+    .code-block code span {
+      display: block;
+      white-space: pre;
+    }
+
+    .code-block code span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 34px;
+      margin-right: 14px;
+      color: #65ded6;
+      opacity: 0.95;
+      user-select: none;
+    }
+
+    .explanation {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      overflow: hidden;
+    }
+
+    .explanation-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      font-weight: 1000;
+    }
+
+    .explanation-content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .explanation-content p {
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 5px 5px 0 #182230;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .explanation-content strong {
+      color: #ff6b35;
+    }
+
+    code.inline {
+      background: #ffd966;
+      color: #182230;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #182230;
+      font-weight: 1000;
+    }
+
+    .next-box {
+      background: #182230;
+      color: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #ff6b35;
+      padding: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .next-box h2 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 2.5rem;
+    }
+
+    .next-box p {
+      color: #f2f4f7;
+      max-width: 760px;
+      font-weight: 700;
+    }
+
+    .next-box a {
+      text-decoration: none;
+      background: #ffd966;
+      color: #182230;
+      border-radius: 999px;
+      border: 2px solid white;
+      box-shadow: 5px 5px 0 white;
+      padding: 12px 18px;
+      font-weight: 1000;
+    }
+
+    footer {
+      text-align: center;
+      padding: 42px 20px;
+      background: #182230;
+      color: white;
+      font-weight: 1000;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 980px) {
+      header {
+        grid-template-columns: 1fr;
+      }
+
+      .code-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      header {
+        padding: 48px 24px;
+      }
+
+      main {
+        padding: 48px 18px;
+      }
+
+      .summary,
+      .code-block,
+      .explanation,
+      .next-box {
+        border-radius: 26px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+
+    <div class="hero-left">
+
+      <div class="pill">
+        <span></span>
+        Pattern 4 · Tools
+      </div>
+
+      <h1>Agents <span>Using Tools</span></h1>
+
+      <p>
+        In this pattern, agents move beyond pure conversation. They can ask Gemini
+        to select external Python functions, execute them, and feed the result back
+        into the model before producing a final answer.
+      </p>
+
+    </div>
+
+    <div class="hero-card">
+
+      <div class="hero-face"></div>
+
+      <h2>The agent gets hands.</h2>
+
+      <p>
+        Tools let an agent interact with the outside world instead of only generating text.
+      </p>
+
+      <div class="tool-stack">
+        <div class="tool-row"><span class="tool-dot"></span> Gemini selects a tool</div>
+        <div class="tool-row"><span class="tool-dot"></span> Python executes the function</div>
+        <div class="tool-row"><span class="tool-dot"></span> Tool result returns to Gemini</div>
+      </div>
+
+    </div>
+
+  </header>
+
+  <nav>
+    <a href="#summary">Summary</a>
+    <a href="#walkthrough">Code Walkthrough</a>
+    <a href="#next">Next Pattern</a>
+  </nav>
+
+  <main>
+
+    <section id="summary">
+
+      <div class="section-title">
+        <span>OVERVIEW</span>
+        <h2>What this pattern teaches</h2>
+      </div>
+
+      <div class="summary">
+
+        <p>
+          The script defines two real Python functions:
+          <code class="inline">get_weather()</code>, which fetches weather from an external API,
+          and <code class="inline">add_numbers()</code>, which performs a simple calculation.
+        </p>
+
+        <p>
+          A tool schema exposes these functions to Gemini. If Gemini returns a function call,
+          the agent executes the Python function, sends the result back to Gemini, and then
+          generates the final response.
+        </p>
+
+      </div>
+
+    </section>
+
+    <section id="walkthrough">
+
+      <div class="section-title">
+        <span>CODE</span>
+        <h2>Line-by-line walkthrough</h2>
+      </div>
+
+      <div class="code-layout">
+
+        <div class="code-block">
+
+          <div class="code-header">
+
+            <span>pattern4.py</span>
+
+            <div class="window-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+          </div>
+
+          <pre><code><span>import os</span>
+<span>import requests</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
+
+<span># Real tool</span>
+<span>def get_weather(city):</span>
+
+<span>    geo = requests.get(</span>
+<span>        f"https://geocoding-api.open-meteo.com/v1/search?name={city}"</span>
+<span>    ).json()</span>
+
+<span>    if "results" not in geo:</span>
+<span>        return f"{city} not found"</span>
+
+<span>    lat = geo["results"][0]["latitude"]</span>
+<span>    lon = geo["results"][0]["longitude"]</span>
+
+<span>    weather = requests.get(</span>
+<span>        f"https://api.open-meteo.com/v1/forecast?"</span>
+<span>        f"latitude={lat}&longitude={lon}&current_weather=true"</span>
+<span>    ).json()</span>
+
+<span>    data = weather.get("current_weather", {})</span>
+
+<span>    return f"{city}: {data.get('temperature')}°C"</span>
+
+<span>def add_numbers(a, b):</span>
+
+<span>    return a + b</span>
+
+<span># Tool schema</span>
+<span>tools = [</span>
+
+<span>    types.Tool(</span>
+
+<span>        function_declarations=[</span>
+
+<span>            types.FunctionDeclaration(</span>
+<span>                name="get_weather",</span>
+<span>                description="Get real weather",</span>
+<span>                parameters={</span>
+<span>                    "type": "OBJECT",</span>
+<span>                    "properties": {"city": {"type": "STRING"}},</span>
+<span>                    "required": ["city"]</span>
+<span>                }</span>
+<span>            ),</span>
+
+<span>            types.FunctionDeclaration(</span>
+<span>                name="add_numbers",</span>
+<span>                description="Add numbers",</span>
+<span>                parameters={</span>
+<span>                    "type": "OBJECT",</span>
+<span>                    "properties": {</span>
+<span>                        "a": {"type": "NUMBER"},</span>
+<span>                        "b": {"type": "NUMBER"}</span>
+<span>                    },</span>
+<span>                    "required": ["a", "b"]</span>
+<span>                }</span>
+<span>            )</span>
+
+<span>        ]</span>
+
+<span>    )</span>
+
+<span>]</span>
+
+<span># Agent</span>
+<span>class Agent:</span>
+
+<span>    def __init__(self, name, prompt):</span>
+
+<span>        self.name = name</span>
+<span>        self.prompt = prompt</span>
+<span>        self.client = genai.Client(</span>
+<span>            api_key=os.environ.get("GEMINI_API_KEY")</span>
+<span>        )</span>
+<span>        self.model = "gemini-2.5-flash"</span>
+
+<span>    def think(self, text):</span>
+
+<span>        if not text:</span>
+<span>            text = "continue"</span>
+
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=text)]</span>
+<span>            )</span>
+<span>        ]</span>
+
+<span>        config = types.GenerateContentConfig(</span>
+<span>            system_instruction=[types.Part.from_text(text=self.prompt)],</span>
+<span>            tools=tools</span>
+<span>        )</span>
+
+<span>        response = self.client.models.generate_content(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
+<span>        )</span>
+
+<span>        # Check tool</span>
+<span>        fc = None</span>
+
+<span>        for p in response.candidates[0].content.parts:</span>
+
+<span>            if p.function_call:</span>
+
+<span>                fc = p.function_call</span>
+
+<span>                break</span>
+
+<span>        # If tool</span>
+<span>        if fc:</span>
+
+<span>            name, args = fc.name, fc.args</span>
+
+<span>            print(f"\\n⚙️ {self.name} -> {name} {args}")</span>
+
+<span>            if name == "get_weather":</span>
+<span>                result = get_weather(**args)</span>
+
+<span>            elif name == "add_numbers":</span>
+<span>                result = add_numbers(**args)</span>
+
+<span>            else:</span>
+<span>                result = "Unknown tool"</span>
+
+<span>            print(f"🔧 {result}")</span>
+
+<span>            tool_response = types.Content(</span>
+<span>                role="tool",</span>
+<span>                parts=[</span>
+<span>                    types.Part.from_function_response(</span>
+<span>                        name=name,</span>
+<span>                        response={"result": result}</span>
+<span>                    )</span>
+<span>                ]</span>
+<span>            )</span>
+
+<span>            final = self.client.models.generate_content(</span>
+<span>                model=self.model,</span>
+<span>                contents=[</span>
+<span>                    contents[0],</span>
+<span>                    types.Content(</span>
+<span>                        role="model",</span>
+<span>                        parts=response.candidates[0].content.parts</span>
+<span>                    ),</span>
+<span>                    tool_response</span>
+<span>                ],</span>
+<span>                config=config</span>
+<span>            )</span>
+
+<span>            if final.text:</span>
+<span>                output = final.text</span>
+
+<span>            else:</span>
+
+<span>                output = ""</span>
+
+<span>                for p in final.candidates[0].content.parts:</span>
+
+<span>                    if p.text:</span>
+<span>                        output += p.text</span>
+
+<span>        else:</span>
+
+<span>            if response.text:</span>
+<span>                output = response.text</span>
+
+<span>            else:</span>
+
+<span>                output = ""</span>
+
+<span>                for p in response.candidates[0].content.parts:</span>
+
+<span>                    if p.text:</span>
+<span>                        output += p.text</span>
+
+<span>        print(output)</span>
+
+<span>        return output</span>
+
+<span># Run</span>
+<span>if __name__ == "__main__":</span>
+
+<span>    human = Agent("Shashank", "You are a human")</span>
+<span>    dog = Agent("Bruno", "You are a smart dog")</span>
+
+<span>    msg = "What's the weather in London?"</span>
+
+<span>    for _ in range(1):</span>
+
+<span>        print(f"\\nShashank:", end=" ")</span>
+<span>        msg = human.think(msg)</span>
+
+<span>        print(f"\\nBruno:", end=" ")</span>
+<span>        msg = dog.think(msg)</span></code></pre>
+
+        </div>
+
+        <div class="explanation">
+
+          <div class="explanation-header">
+            Mental Model
+          </div>
+
+          <div class="explanation-content">
+
+            <p>
+              <strong>Lines 1–4:</strong>
+              Import <code class="inline">os</code>, <code class="inline">requests</code>,
+              and the Gemini SDK. <code class="inline">requests</code> lets the tool call
+              external APIs.
+            </p>
+
+            <p>
+              <strong>Lines 7–28:</strong>
+              Define <code class="inline">get_weather()</code>. It first calls a geocoding API
+              to convert a city into latitude and longitude, then calls the weather API to get
+              current temperature.
+            </p>
+
+            <p>
+              <strong>Lines 30–32:</strong>
+              Define <code class="inline">add_numbers()</code>, a tiny calculation tool.
+              It demonstrates that tools can be both API calls and local functions.
+            </p>
+
+            <p>
+              <strong>Lines 35–76:</strong>
+              Create the tool schema. This tells Gemini which tools exist, what they do,
+              and what arguments they require.
+            </p>
+
+            <p>
+              <strong>Lines 79–99:</strong>
+              Define the <code class="inline">Agent</code> class and initialize the Gemini client.
+              The agent receives both a name and a system prompt.
+            </p>
+
+            <p>
+              <strong>Lines 101–121:</strong>
+              Build the user message and generation config. The key detail is that
+              <code class="inline">tools=tools</code> exposes the Python functions to Gemini.
+            </p>
+
+            <p>
+              <strong>Lines 123–139:</strong>
+              Inspect Gemini’s response to check whether it requested a function call.
+              If a function call exists, the agent captures its name and arguments.
+            </p>
+
+            <p>
+              <strong>Lines 142–181:</strong>
+              Execute the selected Python function. Then build a tool response and send it
+              back to Gemini so the model can produce a natural final answer.
+            </p>
+
+            <p>
+              <strong>Lines 183–207:</strong>
+              Extract the final text response whether Gemini used a tool or answered directly.
+            </p>
+
+            <p>
+              <strong>Lines 212–223:</strong>
+              Create a human agent and a dog agent, then ask about London weather.
+              This demonstrates real tool invocation inside an agent conversation.
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <section id="next">
+
+      <div class="next-box">
+
+        <div>
+
+          <h2>Next: Agents Who Return JSON</h2>
+
+          <p>
+            Pattern 5 makes model outputs structured and machine-readable,
+            which is essential for deterministic orchestration and reliable agent workflows.
+          </p>
+
+        </div>
+
+        <a href="pattern5.html">
+          Open Pattern 5 →
+        </a>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer>
+    Agentic AI Cookbook · Pattern 4
+  </footer>
+
+</body>
+
+</html>
       color: #1f2937;
       font-family: Inter, Arial, sans-serif;
       line-height: 1.7;
