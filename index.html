@@ -82,6 +82,7 @@
       border-radius: 50%;
       background: #ff6b35;
       display: inline-block;
+      flex: 0 0 auto;
     }
 
     header h1 {
@@ -249,6 +250,7 @@
       border-radius: 50%;
       border: 2px solid #182230;
       background: #65ded6;
+      flex: 0 0 auto;
     }
 
     .floating-card-one {
@@ -294,6 +296,7 @@
       gap: 12px;
       overflow-x: auto;
       white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
     }
 
     nav a {
@@ -306,6 +309,7 @@
       font-weight: 1000;
       font-size: 0.9rem;
       box-shadow: 3px 3px 0 #182230;
+      flex: 0 0 auto;
     }
 
     nav a:hover {
@@ -523,6 +527,7 @@
       font-size: 0.72rem;
       font-weight: 1000;
       color: #182230;
+      text-align: center;
     }
 
     .index-item h4 {
@@ -658,6 +663,7 @@
       header {
         grid-template-columns: 1fr;
         min-height: auto;
+        gap: 36px;
       }
 
       .hero-visual {
@@ -670,44 +676,311 @@
     }
 
     @media (max-width: 720px) {
+      body::after {
+        background-size: 26px 26px;
+      }
+
       header {
-        padding: 34px 22px 70px;
+        padding: 30px 18px 46px;
+        display: block;
+      }
+
+      .top-pill {
+        font-size: 0.76rem;
+        padding: 8px 12px;
+        box-shadow: 4px 4px 0 #182230;
+        margin-bottom: 18px;
       }
 
       header h1 {
+        font-size: clamp(2.6rem, 14vw, 4.2rem);
+        line-height: 0.96;
         letter-spacing: -0.06em;
+        margin-bottom: 20px;
+      }
+
+      header h1 strong {
+        text-shadow: 3px 3px 0 #182230;
+        -webkit-text-stroke: 1.2px #182230;
+      }
+
+      header p {
+        font-size: 1rem;
+        line-height: 1.55;
+        margin-bottom: 20px;
+      }
+
+      .hero-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .primary-button,
+      .secondary-button {
+        width: 100%;
+        padding: 13px 16px;
+        box-shadow: 4px 4px 0 #182230;
+      }
+
+      .hero-badges {
+        gap: 8px;
+        margin-top: 22px;
+      }
+
+      .hero-badges span {
+        font-size: 0.78rem;
+        padding: 6px 10px;
+        box-shadow: 3px 3px 0 #182230;
       }
 
       .hero-visual {
-        min-height: 560px;
+        min-height: auto;
+        display: grid;
+        gap: 14px;
+        margin-top: 34px;
       }
 
-      .hero-card-main {
-        width: 92%;
-        right: 0;
-        left: 4%;
+      .blob-card,
+      .hero-card-main,
+      .floating-card-one,
+      .floating-card-two,
+      .floating-card-three {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        transform: none;
+        border-radius: 26px;
+        box-shadow: 6px 6px 0 #182230;
       }
 
       .floating-card-one,
       .floating-card-two,
       .floating-card-three {
-        position: relative;
-        top: auto;
-        right: auto;
-        bottom: auto;
-        left: auto;
-        width: auto;
-        margin-top: 16px;
+        padding: 14px 16px;
+        font-size: 0.92rem;
+      }
+
+      .hero-card-main {
+        order: -1;
+        min-height: auto;
+        padding: 20px;
+      }
+
+      .hero-card-main h2 {
+        font-size: 1.65rem;
+      }
+
+      .hero-card-main p {
+        font-size: 0.95rem;
+      }
+
+      .character-face {
+        height: 150px;
+        border-radius: 24px;
+      }
+
+      .character-face::after {
+        width: 92px;
+        height: 45px;
+        border-width: 5px;
+        bottom: 20px;
+      }
+
+      .mini-row {
+        padding: 10px;
+        font-size: 0.9rem;
+      }
+
+      .mini-dot {
+        width: 22px;
+        height: 22px;
+      }
+
+      nav {
+        padding: 10px 14px;
+        gap: 8px;
+      }
+
+      nav a {
+        font-size: 0.78rem;
+        padding: 8px 11px;
+        box-shadow: 2px 2px 0 #182230;
       }
 
       main {
-        padding: 50px 18px;
+        padding: 42px 16px;
       }
 
-      .index-panel,
+      section {
+        margin-bottom: 68px;
+      }
+
+      .section-title {
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+
+      .section-title span {
+        font-size: 0.72rem;
+        padding: 6px 10px;
+        box-shadow: 3px 3px 0 #182230;
+      }
+
+      h2 {
+        font-size: clamp(2rem, 10vw, 3rem);
+        letter-spacing: -0.045em;
+      }
+
+      h3 {
+        font-size: 1.18rem;
+      }
+
+      p {
+        font-size: 0.96rem;
+      }
+
+      .api-grid,
+      .script-grid,
+      .pattern-grid,
+      .index-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .step-card,
+      .script-card,
+      .pattern-card,
+      .index-item {
+        border-width: 2px;
+        box-shadow: 5px 5px 0 #182230;
+      }
+
+      .step-card,
+      .script-card,
+      .pattern-card {
+        padding: 20px;
+        border-radius: 24px;
+        min-height: auto;
+      }
+
+      .step-card:hover,
+      .script-card:hover,
+      .index-item:hover,
+      .pattern-card:hover {
+        transform: none;
+        box-shadow: 5px 5px 0 #182230;
+      }
+
+      .step-number {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        box-shadow: 3px 3px 0 #182230;
+        margin-bottom: 14px;
+      }
+
+      .index-panel {
+        border-width: 2px;
+        border-radius: 26px;
+        padding: 18px;
+        box-shadow: 6px 6px 0 #182230;
+      }
+
+      .index-panel::before {
+        width: 150px;
+        height: 150px;
+        right: -72px;
+        top: -62px;
+      }
+
+      .index-lead {
+        font-size: 0.96rem;
+        line-height: 1.55;
+      }
+
+      .index-grid {
+        margin-top: 22px;
+      }
+
+      .index-item {
+        min-height: auto;
+        border-radius: 24px;
+        padding: 16px;
+      }
+
+      .index-item::after {
+        width: 62px;
+        height: 62px;
+      }
+
+      .index-top {
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .index-code {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        font-size: 0.88rem;
+        box-shadow: 3px 3px 0 #182230;
+      }
+
+      .index-type {
+        font-size: 0.64rem;
+        padding: 4px 8px;
+        max-width: 120px;
+        justify-content: center;
+      }
+
+      .index-item h4 {
+        font-size: 1.08rem;
+      }
+
+      .index-item p {
+        font-size: 0.88rem;
+      }
+
+      .open-pattern-link {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 0.78rem;
+        box-shadow: 3px 3px 0 #182230;
+      }
+
       .final-box {
-        border-radius: 28px;
+        border-radius: 26px;
         padding: 24px;
+        box-shadow: 7px 7px 0 #ff6b35;
+      }
+
+      .final-box::after {
+        width: 130px;
+        height: 130px;
+        right: -54px;
+        bottom: -54px;
+      }
+
+      footer {
+        padding: 30px 16px;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 380px) {
+      header h1 {
+        font-size: 2.4rem;
+      }
+
+      main {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .index-panel {
+        padding: 14px;
       }
     }
   </style>
@@ -816,173 +1089,27 @@
         </p>
 
         <div class="index-grid">
-          <article class="index-item" data-pattern="1">
-            <div>
-              <div class="index-top"><span class="index-code">1</span><span class="index-type">Foundation</span></div>
-              <h4>Creating Talking Agents</h4>
-              <p>Basic talking agents and orchestration.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="2">
-            <div>
-              <div class="index-top"><span class="index-code">2</span><span class="index-type">Memory</span></div>
-              <h4>Agents with Personality and Memory</h4>
-              <p>Identity, memory, and fact extraction.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="3">
-            <div>
-              <div class="index-top"><span class="index-code">3</span><span class="index-type">Routing</span></div>
-              <h4>Which Agent Should Speak?</h4>
-              <p>Moderator controls conversation routing.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="4">
-            <div>
-              <div class="index-top"><span class="index-code">4</span><span class="index-type">Tools</span></div>
-              <h4>Agents Using Tools</h4>
-              <p>Tool-calling agents using external functions.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="5">
-            <div>
-              <div class="index-top"><span class="index-code">5</span><span class="index-type">JSON</span></div>
-              <h4>Agents Who Return JSON</h4>
-              <p>Structured outputs and machine-readable reasoning.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="6">
-            <div>
-              <div class="index-top"><span class="index-code">6</span><span class="index-type">Handoff</span></div>
-              <h4>Reasoning Agents and Handoff</h4>
-              <p>Agents reason and route control dynamically.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="7">
-            <div>
-              <div class="index-top"><span class="index-code">7</span><span class="index-type">Supervisor</span></div>
-              <h4>Supervisor Pattern</h4>
-              <p>Supervisor routes work to specialist agents.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="8">
-            <div>
-              <div class="index-top"><span class="index-code">8</span><span class="index-type">Parallel</span></div>
-              <h4>Parallel Agents</h4>
-              <p>Fan-out and fan-in reasoning systems.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="9">
-            <div>
-              <div class="index-top"><span class="index-code">9</span><span class="index-type">Debate</span></div>
-              <h4>Debate Pattern</h4>
-              <p>Competing agents and judge evaluation.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="10">
-            <div>
-              <div class="index-top"><span class="index-code">10</span><span class="index-type">Persistent Memory</span></div>
-              <h4>Long-Term Memory</h4>
-              <p>Persistent database-backed memory systems.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="11">
-            <div>
-              <div class="index-top"><span class="index-code">11</span><span class="index-type">Shared Memory</span></div>
-              <h4>Agents with Shared Memory</h4>
-              <p>Collaborative multi-agent memory architecture.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="12">
-            <div>
-              <div class="index-top"><span class="index-code">12</span><span class="index-type">Extraction</span></div>
-              <h4>Knowledge Extraction</h4>
-              <p>Transform text into structured entities.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="13">
-            <div>
-              <div class="index-top"><span class="index-code">13</span><span class="index-type">Embeddings</span></div>
-              <h4>Chunking and Embedding</h4>
-              <p>Prepare documents for semantic retrieval.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="14">
-            <div>
-              <div class="index-top"><span class="index-code">14</span><span class="index-type">Vector Search</span></div>
-              <h4>Vector Search Before Generation</h4>
-              <p>Retrieve vectors before answering.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="15">
-            <div>
-              <div class="index-top"><span class="index-code">15</span><span class="index-type">RAG</span></div>
-              <h4>Basic RAG Agent</h4>
-              <p>Retrieval-augmented generation basics.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="16">
-            <div>
-              <div class="index-top"><span class="index-code">16</span><span class="index-type">Agentic RAG</span></div>
-              <h4>Agentic RAG</h4>
-              <p>Agent decides when retrieval is needed.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="17">
-            <div>
-              <div class="index-top"><span class="index-code">17</span><span class="index-type">Multi-hop</span></div>
-              <h4>Multi-hop Retrieval</h4>
-              <p>Retrieval across multiple reasoning steps.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="18">
-            <div>
-              <div class="index-top"><span class="index-code">18</span><span class="index-type">MCP</span></div>
-              <h4>MCP Protocol Walkthrough</h4>
-              <p>Understanding the Model Context Protocol.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="19">
-            <div>
-              <div class="index-top"><span class="index-code">19</span><span class="index-type">MCP Client</span></div>
-              <h4>Connecting to an MCP Server</h4>
-              <p>Client-side MCP communication.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="20">
-            <div>
-              <div class="index-top"><span class="index-code">20</span><span class="index-type">MCP Server</span></div>
-              <h4>Creating Your Own Tool Server</h4>
-              <p>Build custom MCP-powered servers.</p>
-            </div>
-          </article>
-
-          <article class="index-item" data-pattern="21">
-            <div>
-              <div class="index-top"><span class="index-code">21</span><span class="index-type">Integration</span></div>
-              <h4>Agent + MCP Full Integration</h4>
-              <p>End-to-end architecture with MCP tools.</p>
-            </div>
-          </article>
+          <article class="index-item" data-pattern="1"><div><div class="index-top"><span class="index-code">1</span><span class="index-type">Foundation</span></div><h4>Creating Talking Agents</h4><p>Basic talking agents and orchestration.</p></div></article>
+          <article class="index-item" data-pattern="2"><div><div class="index-top"><span class="index-code">2</span><span class="index-type">Memory</span></div><h4>Agents with Personality and Memory</h4><p>Identity, memory, and fact extraction.</p></div></article>
+          <article class="index-item" data-pattern="3"><div><div class="index-top"><span class="index-code">3</span><span class="index-type">Routing</span></div><h4>Which Agent Should Speak?</h4><p>Moderator controls conversation routing.</p></div></article>
+          <article class="index-item" data-pattern="4"><div><div class="index-top"><span class="index-code">4</span><span class="index-type">Tools</span></div><h4>Agents Using Tools</h4><p>Tool-calling agents using external functions.</p></div></article>
+          <article class="index-item" data-pattern="5"><div><div class="index-top"><span class="index-code">5</span><span class="index-type">JSON</span></div><h4>Agents Who Return JSON</h4><p>Structured outputs and machine-readable reasoning.</p></div></article>
+          <article class="index-item" data-pattern="6"><div><div class="index-top"><span class="index-code">6</span><span class="index-type">Handoff</span></div><h4>Reasoning Agents and Handoff</h4><p>Agents reason and route control dynamically.</p></div></article>
+          <article class="index-item" data-pattern="7"><div><div class="index-top"><span class="index-code">7</span><span class="index-type">Supervisor</span></div><h4>Supervisor Pattern</h4><p>Supervisor routes work to specialist agents.</p></div></article>
+          <article class="index-item" data-pattern="8"><div><div class="index-top"><span class="index-code">8</span><span class="index-type">Parallel</span></div><h4>Parallel Agents</h4><p>Fan-out and fan-in reasoning systems.</p></div></article>
+          <article class="index-item" data-pattern="9"><div><div class="index-top"><span class="index-code">9</span><span class="index-type">Debate</span></div><h4>Debate Pattern</h4><p>Competing agents and judge evaluation.</p></div></article>
+          <article class="index-item" data-pattern="10"><div><div class="index-top"><span class="index-code">10</span><span class="index-type">Persistent Memory</span></div><h4>Long-Term Memory</h4><p>Persistent database-backed memory systems.</p></div></article>
+          <article class="index-item" data-pattern="11"><div><div class="index-top"><span class="index-code">11</span><span class="index-type">Shared Memory</span></div><h4>Agents with Shared Memory</h4><p>Collaborative multi-agent memory architecture.</p></div></article>
+          <article class="index-item" data-pattern="12"><div><div class="index-top"><span class="index-code">12</span><span class="index-type">Extraction</span></div><h4>Knowledge Extraction</h4><p>Transform text into structured entities.</p></div></article>
+          <article class="index-item" data-pattern="13"><div><div class="index-top"><span class="index-code">13</span><span class="index-type">Embeddings</span></div><h4>Chunking and Embedding</h4><p>Prepare documents for semantic retrieval.</p></div></article>
+          <article class="index-item" data-pattern="14"><div><div class="index-top"><span class="index-code">14</span><span class="index-type">Vector Search</span></div><h4>Vector Search Before Generation</h4><p>Retrieve vectors before answering.</p></div></article>
+          <article class="index-item" data-pattern="15"><div><div class="index-top"><span class="index-code">15</span><span class="index-type">RAG</span></div><h4>Basic RAG Agent</h4><p>Retrieval-augmented generation basics.</p></div></article>
+          <article class="index-item" data-pattern="16"><div><div class="index-top"><span class="index-code">16</span><span class="index-type">Agentic RAG</span></div><h4>Agentic RAG</h4><p>Agent decides when retrieval is needed.</p></div></article>
+          <article class="index-item" data-pattern="17"><div><div class="index-top"><span class="index-code">17</span><span class="index-type">Multi-hop</span></div><h4>Multi-hop Retrieval</h4><p>Retrieval across multiple reasoning steps.</p></div></article>
+          <article class="index-item" data-pattern="18"><div><div class="index-top"><span class="index-code">18</span><span class="index-type">MCP</span></div><h4>MCP Protocol Walkthrough</h4><p>Understanding the Model Context Protocol.</p></div></article>
+          <article class="index-item" data-pattern="19"><div><div class="index-top"><span class="index-code">19</span><span class="index-type">MCP Client</span></div><h4>Connecting to an MCP Server</h4><p>Client-side MCP communication.</p></div></article>
+          <article class="index-item" data-pattern="20"><div><div class="index-top"><span class="index-code">20</span><span class="index-type">MCP Server</span></div><h4>Creating Your Own Tool Server</h4><p>Build custom MCP-powered servers.</p></div></article>
+          <article class="index-item" data-pattern="21"><div><div class="index-top"><span class="index-code">21</span><span class="index-type">Integration</span></div><h4>Agent + MCP Full Integration</h4><p>End-to-end architecture with MCP tools.</p></div></article>
         </div>
       </div>
     </section>
@@ -994,30 +1121,11 @@
       </div>
 
       <div class="script-grid">
-        <div class="script-card">
-          <h3>Find the Agent Class</h3>
-          <p>Start with the class that wraps Gemini. That is the mind of the pattern.</p>
-        </div>
-
-        <div class="script-card">
-          <h3>Trace the State</h3>
-          <p>Look for memory, facts, retrieved context, JSON outputs, and tool results.</p>
-        </div>
-
-        <div class="script-card">
-          <h3>Read the Orchestrator</h3>
-          <p>The orchestrator tells you how control moves between agents.</p>
-        </div>
-
-        <div class="script-card">
-          <h3>Inspect Prompts</h3>
-          <p>System prompts define roles, routing, constraints, and structured behavior.</p>
-        </div>
-
-        <div class="script-card">
-          <h3>Run and Modify</h3>
-          <p>Change one variable at a time: role, memory, tool, retrieval, or routing.</p>
-        </div>
+        <div class="script-card"><h3>Find the Agent Class</h3><p>Start with the class that wraps Gemini. That is the mind of the pattern.</p></div>
+        <div class="script-card"><h3>Trace the State</h3><p>Look for memory, facts, retrieved context, JSON outputs, and tool results.</p></div>
+        <div class="script-card"><h3>Read the Orchestrator</h3><p>The orchestrator tells you how control moves between agents.</p></div>
+        <div class="script-card"><h3>Inspect Prompts</h3><p>System prompts define roles, routing, constraints, and structured behavior.</p></div>
+        <div class="script-card"><h3>Run and Modify</h3><p>Change one variable at a time: role, memory, tool, retrieval, or routing.</p></div>
       </div>
     </section>
 
@@ -1028,25 +1136,10 @@
       </div>
 
       <div class="pattern-grid">
-        <div class="pattern-card">
-          <div><span class="pattern-pill">Core loop</span><h3>Agent = prompt + memory + model call</h3></div>
-          <p>The earliest scripts teach the basic loop: receive input, build context, call Gemini, store response.</p>
-        </div>
-
-        <div class="pattern-card">
-          <div><span class="pattern-pill">Control</span><h3>Orchestration decides movement</h3></div>
-          <p>Alternation, moderation, supervisor routing, and handoff are all control-flow patterns.</p>
-        </div>
-
-        <div class="pattern-card">
-          <div><span class="pattern-pill">Grounding</span><h3>Retrieval gives the agent evidence</h3></div>
-          <p>Chunking, embedding, vector search, RAG, and multi-hop retrieval prevent blind guessing.</p>
-        </div>
-
-        <div class="pattern-card">
-          <div><span class="pattern-pill">Capability</span><h3>MCP turns tools into an ecosystem</h3></div>
-          <p>The MCP patterns separate reasoning from capability, letting agents call external tool servers.</p>
-        </div>
+        <div class="pattern-card"><div><span class="pattern-pill">Core loop</span><h3>Agent = prompt + memory + model call</h3></div><p>The earliest scripts teach the basic loop: receive input, build context, call Gemini, store response.</p></div>
+        <div class="pattern-card"><div><span class="pattern-pill">Control</span><h3>Orchestration decides movement</h3></div><p>Alternation, moderation, supervisor routing, and handoff are all control-flow patterns.</p></div>
+        <div class="pattern-card"><div><span class="pattern-pill">Grounding</span><h3>Retrieval gives the agent evidence</h3></div><p>Chunking, embedding, vector search, RAG, and multi-hop retrieval prevent blind guessing.</p></div>
+        <div class="pattern-card"><div><span class="pattern-pill">Capability</span><h3>MCP turns tools into an ecosystem</h3></div><p>The MCP patterns separate reasoning from capability, letting agents call external tool servers.</p></div>
       </div>
     </section>
 
