@@ -1,270 +1,583 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agentic Pattern&nbsp;9b – Shared Memory Agents</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pattern 11 — Shared Memory Agents</title>
+
   <style>
-    /*
-      This explanation covers the shared memory pattern where multiple
-      agents read and write a common memory store. The left column shows
-      the code, while the right column explains how memory is shared
-      between agents and how it influences their responses.
-    */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      margin: 0;
-      font-family: "Inter", sans-serif;
-      background: #fff7ed;
-      color: #7c2d12;
-      line-height: 1.6;
+      font-family: Inter, Arial, sans-serif;
+      background: #fff8ef;
+      color: #182230;
+      overflow-x: hidden;
+      line-height: 1.7;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 217, 102, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 222, 214, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(255, 107, 53, 0.25), transparent 25%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(24, 34, 48, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 34, 48, 0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      z-index: -1;
+    }
+
     header {
-      background: linear-gradient(135deg, #f59e0b, #fbbf24);
-      color: white;
-      padding: 2rem 1rem;
-      text-align: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2.4rem;
-    }
-    header p {
-      margin-top: 0.5rem;
-      font-size: 1.05rem;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
-      color: #fefce8;
-    }
-    .container {
+      padding: 70px 8%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      padding: 2rem 2.5rem;
-      max-width: 1400px;
-      margin: auto;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
     }
-    .code {
-      background: #fffef9;
-      border: 1px solid #fde68a;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      overflow: hidden;
+
+    .hero-left h1 {
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      margin-bottom: 24px;
+      font-weight: 1000;
     }
-    .code pre {
-      margin: 0;
-      padding: 1.5rem;
-      font-family: "Fira Code", monospace;
-      font-size: 0.9rem;
+
+    .hero-left h1 span {
+      color: #ff6b35;
+      text-shadow: 5px 5px 0 #182230;
+      -webkit-text-stroke: 2px #182230;
+    }
+
+    .hero-left p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #ffd966;
+      color: #182230;
+      border: 2px solid #182230;
+      box-shadow: 5px 5px 0 #182230;
+      margin-bottom: 24px;
+      font-weight: 1000;
+      font-size: 0.88rem;
+    }
+
+    .pill span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff6b35;
+      border: 2px solid #182230;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 38px;
+      border: 3px solid #182230;
+      box-shadow: 12px 12px 0 #182230;
+      padding: 28px;
+      transform: rotate(2deg);
+    }
+
+    .hero-face {
+      height: 210px;
+      border-radius: 30px;
+      border: 3px solid #182230;
+      background:
+        radial-gradient(circle at 35% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 68%, #ff6b35 0 36px, transparent 37px),
+        #ffd966;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .hero-face::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      border: 6px solid #182230;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-card p {
+      color: #475467;
+      font-weight: 700;
+    }
+
+    .json-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .json-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 1000;
+      color: #182230;
+    }
+
+    .json-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+      background: #ff6b35;
+      flex: 0 0 auto;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 8%;
+      border-top: 2px solid #182230;
+      border-bottom: 2px solid #182230;
+      display: flex;
+      gap: 14px;
       overflow-x: auto;
+      white-space: nowrap;
     }
-    .code .line {
+
+    nav a {
+      text-decoration: none;
+      color: #182230;
+      background: white;
+      border: 2px solid #182230;
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.9rem;
+    }
+
+    nav a:hover {
+      background: #ffd966;
+    }
+
+    main {
+      max-width: 1360px;
+      margin: auto;
+      padding: 70px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .section-title span {
+      background: #ff6b35;
+      color: #182230;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #182230;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.84rem;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 1000;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      padding: 30px;
+    }
+
+    .summary p {
+      color: #475467;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .code-block {
+      border-radius: 36px;
+      overflow: hidden;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      background: #182230;
+    }
+
+    .code-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 1000;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+    }
+
+    .window-dots span:nth-child(1) { background: #ff6b35; }
+    .window-dots span:nth-child(2) { background: #ffd966; }
+    .window-dots span:nth-child(3) { background: #65ded6; }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 22px;
+      overflow-x: auto;
+      background: #182230;
+    }
+
+    .code-block code {
       display: block;
+      font-family: "Courier New", monospace;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: #fff8ef;
+      counter-reset: line;
+      font-weight: 700;
     }
-    .code .num {
+
+    .code-block code span {
+      display: block;
+      white-space: pre;
+    }
+
+    .code-block code span::before {
+      counter-increment: line;
+      content: counter(line);
       display: inline-block;
-      width: 2.5rem;
-      color: #b45309;
+      width: 34px;
+      margin-right: 14px;
+      color: #ffd966;
+      opacity: 0.95;
       user-select: none;
     }
-    .explain {
-      background: #fffef9;
-      border: 1px solid #fde68a;
-      border-radius: 12px;
-      padding: 1.5rem 2rem;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+
+    .explanation {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      overflow: hidden;
     }
-    .explain h2 {
-      margin-top: 0;
-      font-size: 1.6rem;
-      color: #b45309;
+
+    .explanation-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      font-weight: 1000;
     }
-    .explain h3 {
-      margin-top: 1.2rem;
-      font-size: 1.2rem;
-      color: #c2410c;
+
+    .explanation-content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
     }
-    .explain p, .explain li {
-      font-size: 0.95rem;
+
+    .explanation-content p {
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 5px 5px 0 #182230;
+      color: #344054;
+      font-weight: 700;
     }
-    .explain ul {
-      margin-top: 0.5rem;
-      padding-left: 1.2rem;
+
+    .explanation-content strong {
+      color: #ff6b35;
     }
-    .explain li {
-      margin-bottom: 0.4rem;
+
+    code.inline {
+      background: #ffd966;
+      color: #182230;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #182230;
+      font-weight: 1000;
     }
-    @media (max-width: 900px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
+
+    .next-box {
+      background: #182230;
+      color: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #ff6b35;
+      padding: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .next-box h2 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 2.5rem;
+    }
+
+    .next-box p {
+      color: #f2f4f7;
+      max-width: 760px;
+      font-weight: 700;
+    }
+
+    .next-box a {
+      text-decoration: none;
+      background: #ffd966;
+      color: #182230;
+      border-radius: 999px;
+      border: 2px solid white;
+      box-shadow: 5px 5px 0 white;
+      padding: 12px 18px;
+      font-weight: 1000;
+    }
+
+    footer {
+      text-align: center;
+      padding: 42px 20px;
+      background: #182230;
+      color: white;
+      font-weight: 1000;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 980px) {
+      header { grid-template-columns: 1fr; }
+      .code-layout { grid-template-columns: 1fr; }
     }
   </style>
 </head>
+
 <body>
+
   <header>
-    <h1>Pattern&nbsp;9b – Shared Memory Agents</h1>
-    <p>
-      In this pattern, multiple agents share a single memory store.
-      Each agent can read everything written to the store and append
-      their own contributions. The conversation evolves as agents
-      incorporate shared context into their responses.
-    </p>
+    <div class="hero-left">
+      <div class="pill">
+        <span></span>
+        Pattern 11 · Multi-Agent Context
+      </div>
+      <h1><span>Shared Memory</span> Agents</h1>
+      <p>
+        In this pattern, multiple agents share a single memory store. Each agent can read everything written to the store and append their own contributions, allowing a conversation to evolve naturally with full shared context.
+      </p>
+    </div>
+
+    <div class="hero-card">
+      <div class="hero-face"></div>
+      <h2>A communal brain for agents.</h2>
+      <p>Shared memory allows agents to build on each other's experiences in real-time.</p>
+      <div class="json-stack">
+        <div class="json-row"><span class="json-dot"></span> Central Memory Store</div>
+        <div class="json-row"><span class="json-dot"></span> Unified Context Injection</div>
+        <div class="json-row"><span class="json-dot"></span> Cross-Agent Collaboration</div>
+      </div>
+    </div>
   </header>
-  <main class="container">
-    <div class="code">
-      <pre>
-<span class="line"><span class="num">1</span><span class="content">import os</span></span>
-<span class="line"><span class="num">2</span><span class="content">from google import genai</span></span>
-<span class="line"><span class="num">3</span><span class="content">from google.genai import types</span></span>
-<span class="line"><span class="num">4</span><span class="content">os.environ["GEMINI_API_KEY"] = "your_api_key"</span></span>
 
-<span class="line"><span class="num">7</span><span class="content">class SharedMemory:</span></span>
-<span class="line"><span class="num">8</span><span class="content">    def __init__(self):</span></span>
-<span class="line"><span class="num">9</span><span class="content">        self.store = []</span></span>
-<span class="line"><span class="num">11</span><span class="content">    def write(self, agent_name, input_text, output_text):</span></span>
-<span class="line"><span class="num">12</span><span class="content">        self.store.append({</span></span>
-<span class="line"><span class="num">13</span><span class="content">            "agent": agent_name,</span></span>
-<span class="line"><span class="num">14</span><span class="content">            "input": input_text,</span></span>
-<span class="line"><span class="num">15</span><span class="content">            "output": output_text</span></span>
-<span class="line"><span class="num">16</span><span class="content">        })</span></span>
-<span class="line"><span class="num">18</span><span class="content">    def read(self):</span></span>
-<span class="line"><span class="num">19</span><span class="content">        if not self.store:</span></span>
-<span class="line"><span class="num">20</span><span class="content">            return "No shared memory yet."</span></span>
-<span class="line"><span class="num">22</span><span class="content">        memory_text = ""</span></span>
-<span class="line"><span class="num">23</span><span class="content">        for i, item in enumerate(self.store, start=1):</span></span>
-<span class="line"><span class="num">24</span><span class="content">            memory_text += f"""</span></span>
-<span class="line"><span class="num">25</span><span class="content">Memory {i}</span></span>
-<span class="line"><span class="num">26</span><span class="content">Agent: {item['agent']}</span></span>
-<span class="line"><span class="num">27</span><span class="content">Input: {item['input']}</span></span>
-<span class="line"><span class="num">28</span><span class="content">Output: {item['output']}</span></span>
-<span class="line"><span class="num">29</span><span class="content">"""</span></span>
-<span class="line"><span class="num">30</span><span class="content">        return memory_text</span></span>
+  <nav>
+    <a href="#summary">Summary</a>
+    <a href="#walkthrough">Code Walkthrough</a>
+    <a href="#next">Next Pattern</a>
+  </nav>
 
-<span class="line"><span class="num">33</span><span class="content">class BaseAgent:</span></span>
-<span class="line"><span class="num">34</span><span class="content">    def __init__(self, name, sys_prompt, shared_memory, model="gemini-2.5-flash-lite"):</span></span>
-<span class="line"><span class="num">35</span><span class="content">        self.name = name</span></span>
-<span class="line"><span class="num">36</span><span class="content">        self.sys_prompt = sys_prompt</span></span>
-<span class="line"><span class="num">37</span><span class="content">        self.shared_memory = shared_memory</span></span>
-<span class="line"><span class="num">38</span><span class="content">        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span></span>
-<span class="line"><span class="num">39</span><span class="content">        self.model = model</span></span>
+  <main>
+    <section id="summary">
+      <div class="section-title">
+        <span>OVERVIEW</span>
+        <h2>What this pattern teaches</h2>
+      </div>
+      <div class="summary">
+        <p>
+          A <code class="inline">SharedMemory</code> class is introduced to act as a lightweight, in-memory database. Unlike previous patterns where each agent had private memory, here every interaction—regardless of which agent produced it—is saved to a common list.
+        </p>
+        <p>
+          The orchestrator facilitates a multi-turn dialogue where a human and a dog interact. Because both read the same shared store, the "Dog" agent effectively knows what the "Human" agent said in previous turns, leading to highly coherent emergent behavior.
+        </p>
+      </div>
+    </section>
 
-<span class="line"><span class="num">41</span><span class="content">    def think(self, input_text):</span></span>
-<span class="line"><span class="num">43</span><span class="content">        memory_context = self.shared_memory.read()</span></span>
-<span class="line"><span class="num">45</span><span class="content">        final_input = f"""</span></span>
-<span class="line"><span class="num">46</span><span class="content">You have access to shared memory.</span></span>
-<span class="line"><span class="num">47</span><span class="content"></span></span>
-<span class="line"><span class="num">48</span><span class="content">Shared Memory:</span></span>
-<span class="line"><span class="num">49</span><span class="content">{memory_context}</span></span>
-<span class="line"><span class="num">51</span><span class="content">Current Input:</span></span>
-<span class="line"><span class="num">52</span><span class="content">{input_text}</span></span>
-<span class="line"><span class="num">54</span><span class="content">Respond as {self.name}.</span></span>
-<span class="line"><span class="num">55</span><span class="content">"""</span></span>
-<span class="line"><span class="num">57</span><span class="content">        contents = [types.Content(role="user", parts=[types.Part.from_text(text=final_input)])]</span></span>
-<span class="line"><span class="num">64</span><span class="content">        config = types.GenerateContentConfig(</span></span>
-<span class="line"><span class="num">65</span><span class="content">            thinking_config=types.ThinkingConfig(thinking_budget=0),</span></span>
-<span class="line"><span class="num">66</span><span class="content">            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span></span>
-<span class="line"><span class="num">67</span><span class="content">        )</span></span>
-<span class="line"><span class="num">69</span><span class="content">        response = ""</span></span>
-<span class="line"><span class="num">71</span><span class="content">        for chunk in self.client.models.generate_content_stream(model=self.model, contents=contents, config=config):</span></span>
-<span class="line"><span class="num">72</span><span class="content">            if chunk.text:</span></span>
-<span class="line"><span class="num">73</span><span class="content">                print(chunk.text, end="")</span></span>
-<span class="line"><span class="num">74</span><span class="content">                response += chunk.text</span></span>
-<span class="line"><span class="num">80</span><span class="content">        print()</span></span>
-<span class="line"><span class="num">82</span><span class="content">        self.shared_memory.write(agent_name=self.name, input_text=input_text, output_text=response)</span></span>
-<span class="line"><span class="num">88</span><span class="content">        return response</span></span>
+    <section id="walkthrough">
+      <div class="section-title">
+        <span>CODE</span>
+        <h2>Line-by-line walkthrough</h2>
+      </div>
 
-<span class="line"><span class="num">91</span><span class="content">class Human(BaseAgent):</span></span>
-<span class="line"><span class="num">92</span><span class="content">    def __init__(self, name, shared_memory):</span></span>
-<span class="line"><span class="num">93</span><span class="content">        super().__init__(name, f"You are {name}, a human. Talk naturally.", shared_memory)</span></span>
+      <div class="code-layout">
+        <div class="code-block">
+          <div class="code-header">
+            <span>pattern11.py</span>
+            <div class="window-dots"><span></span><span></span><span></span></div>
+          </div>
+          <pre><code><span>import os</span>
+<span>from google import genai</span>
+<span>from google.genai import types</span>
 
-<span class="line"><span class="num">100</span><span class="content">class Dog(BaseAgent):</span></span>
-<span class="line"><span class="num">101</span><span class="content">    def __init__(self, name, shared_memory):</span></span>
-<span class="line"><span class="num">103</span><span class="content">        super().__init__(name, f"You are {name}, a dog. Bark, be playful.", shared_memory)</span></span>
+<span>class SharedMemory:</span>
+<span>    def __init__(self):</span>
+<span>        self.store = []</span>
 
-<span class="line"><span class="num">109</span><span class="content">def orchestrate(human, dog, turns=5):</span></span>
-<span class="line"><span class="num">110</span><span class="content">    message = "Hi Dog!"</span></span>
-<span class="line"><span class="num">112</span><span class="content">    for _ in range(turns):</span></span>
-<span class="line"><span class="num">113</span><span class="content">        print(f"\n{human.name}: ", end="")</span></span>
-<span class="line"><span class="num">114</span><span class="content">        human_out = human.think(message)</span></span>
-<span class="line"><span class="num">116</span><span class="content">        print(f"\n{dog.name}: ", end="")</span></span>
-<span class="line"><span class="num">117</span><span class="content">        dog_out = dog.think(human_out)</span></span>
-<span class="line"><span class="num">119</span><span class="content">        message = dog_out</span></span>
+<span>    def write(self, agent_name, input_text, output_text):</span>
+<span>        self.store.append({</span>
+<span>            "agent": agent_name,</span>
+<span>            "input": input_text,</span>
+<span>            "output": output_text</span>
+<span>        })</span>
 
-<span class="line"><span class="num">122</span><span class="content">if __name__ == "__main__":</span></span>
-<span class="line"><span class="num">123</span><span class="content">    shared_memory = SharedMemory()</span></span>
-<span class="line"><span class="num">125</span><span class="content">    human = Human("Shashank", shared_memory)</span></span>
-<span class="line"><span class="num">126</span><span class="content">    dog = Dog("Bruno", shared_memory)</span></span>
-<span class="line"><span class="num">128</span><span class="content">    orchestrate(human, dog)</span></span>
-      </pre>
-    </div>
-    <div class="explain">
-      <h2>Sharing Memory Across Agents</h2>
-      <p>
-        Shared memory allows agents to build on each other’s experiences.
-        Rather than storing knowledge privately, all interactions are saved
-        into a common store, which becomes part of every new prompt. This
-        pattern encourages emergent behaviour as agents incorporate the
-        entire conversation history into their reasoning.
-      </p>
-      <h3>The <code>SharedMemory</code> store</h3>
-      <p>
-        Lines&nbsp;7‑30 define a lightweight in‑memory database. The
-        <code>store</code> list holds dictionaries for each interaction.
-        <code>write()</code> (lines&nbsp;11‑16) appends a record with the
-        agent’s name, the input it received, and the output it produced.
-        <code>read()</code> (lines&nbsp;18‑30) concatenates all records
-        into a formatted string. If nothing has been written yet, it
-        returns a friendly notice.
-      </p>
-      <h3>BaseAgent with Memory Access</h3>
-      <p>
-        The <code>BaseAgent</code> (lines&nbsp;33‑88) takes a
-        <code>shared_memory</code> instance and a system prompt. In
-        <code>think()</code>, it reads the shared memory into
-        <code>memory_context</code> (line&nbsp;43) and builds a final
-        prompt (lines&nbsp;45‑55) containing:
-      </p>
-      <ul>
-        <li>A notice that the agent can access shared memory.</li>
-        <li>The entire shared memory contents, providing context.</li>
-        <li>The current input from the other participant.</li>
-        <li>A final instruction to respond in character as
-          <code>self.name</code>.</li>
-      </ul>
-      <p>
-        The prompt is sent to Gemini using
-        <code>generate_content_stream()</code> (lines&nbsp;71‑74). Once
-        a complete response is assembled, it is printed and added back
-        into the shared memory via <code>write()</code> (line&nbsp;82).
-      </p>
-      <h3>Specialised Humans and Dogs</h3>
-      <p>
-        Two subclasses provide system prompts tailored to a human and a
-        dog. The <code>Human</code> (lines&nbsp;91‑93) speaks naturally,
-        while the <code>Dog</code> (lines&nbsp;100‑103) barks and plays.
-        Both pass the same shared memory reference to their base class.
-      </p>
-      <h3>Orchestration</h3>
-      <p>
-        The <code>orchestrate()</code> function (lines&nbsp;109‑119)
-        demonstrates how memory accumulates. It starts with a simple
-        greeting from the human to the dog. For each of the specified
-        turns, the human responds to the latest message and writes the
-        conversation to shared memory. The dog reads this updated memory
-        when formulating its reply, and so on. By the last turn, both
-        agents have access to the full conversation history.
-      </p>
-      <h3>Execution</h3>
-      <p>
-        When run as a script, the code creates a single
-        <code>SharedMemory</code> instance, instantiates a human named
-        “Shashank” and a dog named “Bruno”, and runs the orchestrated
-        conversation. Because both agents read from and write to the same
-        memory store, their responses reflect the evolving context.
-      </p>
-    </div>
+<span>    def read(self):</span>
+<span>        if not self.store: return "No shared memory yet."</span>
+<span>        memory_text = ""</span>
+<span>        for i, item in enumerate(self.store, start=1):</span>
+<span>            memory_text += f"\nMemory {i}\nAgent: {item['agent']}\nInput: {item['input']}\nOutput: {item['output']}\n"</span>
+<span>        return memory_text</span>
+
+<span>class BaseAgent:</span>
+<span>    def __init__(self, name, sys_prompt, shared_memory, model="gemini-2.5-flash-lite"):</span>
+<span>        self.name = name</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.shared_memory = shared_memory</span>
+<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>        self.model = model</span>
+
+<span>    def think(self, input_text):</span>
+<span>        memory_context = self.shared_memory.read()</span>
+<span>        final_input = f"\nShared Memory:\n{memory_context}\n\nCurrent Input:\n{input_text}\n\nRespond as {self.name}."</span>
+<span>        </span>
+<span>        contents = [types.Content(role="user", parts=[types.Part.from_text(text=final_input)])]</span>
+<span>        config = types.GenerateContentConfig(system_instruction=[types.Part.from_text(text=self.sys_prompt)])</span>
+
+<span>        response = ""</span>
+<span>        for chunk in self.client.models.generate_content_stream(model=self.model, contents=contents, config=config):</span>
+<span>            if chunk.text: response += chunk.text</span>
+<span>        </span>
+<span>        self.shared_memory.write(agent_name=self.name, input_text=input_text, output_text=response)</span>
+<span>        return response</span>
+
+<span>class Human(BaseAgent):</span>
+<span>    def __init__(self, name, shared_memory):</span>
+<span>        super().__init__(name, f"You are {name}, a human. Talk naturally.", shared_memory)</span>
+
+<span>class Dog(BaseAgent):</span>
+<span>    def __init__(self, name, shared_memory):</span>
+<span>        super().__init__(name, f"You are {name}, a dog. Bark, be playful.", shared_memory)</span>
+
+<span>def orchestrate(human, dog, turns=5):</span>
+<span>    message = "Hi Dog!"</span>
+<span>    for _ in range(turns):</span>
+<span>        human_out = human.think(message)</span>
+<span>        dog_out = dog.think(human_out)</span>
+<span>        message = dog_out</span>
+
+<span>if __name__ == "__main__":</span>
+<span>    mem = SharedMemory()</span>
+<span>    orchestrate(Human("Shashank", mem), Dog("Bruno", mem))</span></code></pre>
+        </div>
+
+        <div class="explanation">
+          <div class="explanation-header">Mental Model</div>
+          <div class="explanation-content">
+            <p><strong>Lines 5-21:</strong> The <code class="inline">SharedMemory</code> class acts as the single source of truth. It tracks who said what and makes the entire history readable as a single string.</p>
+            <p><strong>Lines 30-46:</strong> In the <code class="inline">think()</code> method, the agent pulls the entire shared history and injects it into the prompt. This ensures the model is aware of the "communal" context before responding.</p>
+            <p><strong>Line 45:</strong> After generating a response, the agent writes its own output back to the shared store, immediately making it available to the next agent in the loop.</p>
+            <p><strong>Lines 49-55:</strong> Specialized <code class="inline">Human</code> and <code class="inline">Dog</code> classes use standard role-playing prompts but leverage the shared memory provided at initialization.</p>
+            <p><strong>Lines 57-65:</strong> The orchestrator passes the output of one agent as the input to the next, while the shared memory handles the background context building automatically.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="next">
+      <div class="next-box">
+        <div>
+          <h2>Next: The Autonomous Researcher</h2>
+          <p>Pattern 12 (formerly Pattern 11) combines memory, reasoning, and tool use into a high-level autonomous agent.</p>
+        </div>
+        <a href="pattern12.html">Open Pattern 12 →</a>
+      </div>
+    </section>
   </main>
+
+  <footer>Agentic AI Cookbook · Pattern 11</footer>
+
 </body>
+
 </html>
