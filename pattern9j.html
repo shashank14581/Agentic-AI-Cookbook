@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern 9j – Connecting to an MCP Server</title>
+  <style>
+    /*
+      This page demonstrates how to connect to an already running MCP
+      server and call a tool. A dusk blue gradient hints at reaching
+      out to a remote service. The page is intentionally concise, as
+      this pattern is a thin client wrapper around the protocol.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #f0f4f8;
+      color: #1a365d;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #2c5282, #4a5568);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #cbd5e0;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .code-pane {
+      background: #ebf4ff;
+      border: 1px solid #c3dafe;
+      border-radius: 12px;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    .code-pane pre {
+      margin: 0;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+    .explanation-pane {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .explanation-pane h3 {
+      margin-top: 0;
+      color: #2c5282;
+    }
+    .explanation-pane p {
+      margin: 0.75rem 0;
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      background: #2c5282;
+      color: #b3c5d6;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 9j – Connecting to an MCP Server</h1>
+    <p>This simple client shows how to call a tool on an existing MCP server. It does not run Gemini; it just demonstrates the protocol itself.</p>
+  </header>
+  <div class="container">
+    <div class="code-pane">
+      <pre><code>
+1 !pip&nbsp;install&nbsp;-q&nbsp;"mcp[cli]"&nbsp;nest_asyncio
+2 
+3 import&nbsp;nest_asyncio
+4 from&nbsp;mcp&nbsp;import&nbsp;ClientSession
+5 from&nbsp;mcp.client.streamable_http&nbsp;import&nbsp;streamablehttp_client
+6 
+7 nest_asyncio.apply()
+8 
+9 # Set the URL of an existing MCP server.
+10 MCP_URL&nbsp;=&nbsp;"http://127.0.0.1:8011/mcp"
+11 
+12 class MCPClient:
+13 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;url):
+14 &nbsp;&nbsp;&nbsp;&nbsp;self.url&nbsp;=&nbsp;url
+15 
+16 &nbsp;&nbsp;async&nbsp;def&nbsp;call_tool(self,&nbsp;tool_name,&nbsp;arguments):
+17 &nbsp;&nbsp;&nbsp;&nbsp;async&nbsp;with&nbsp;streamablehttp_client(self.url)&nbsp;as&nbsp;(read,&nbsp;write,&nbsp;_):
+18 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;async&nbsp;with&nbsp;ClientSession(read,&nbsp;write)&nbsp;as&nbsp;session:
+19 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;await&nbsp;session.initialize()
+20 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result&nbsp;=&nbsp;await&nbsp;session.call_tool(name=tool_name,arguments=arguments)
+21 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;result.content[0].text
+22 
+23 async&nbsp;def&nbsp;main():
+24 &nbsp;&nbsp;client&nbsp;=&nbsp;MCPClient(MCP_URL)
+25 &nbsp;&nbsp;# Invoke the remote tool with a query.
+26 &nbsp;&nbsp;result&nbsp;=&nbsp;await&nbsp;client.call_tool(
+27 &nbsp;&nbsp;&nbsp;&nbsp;tool_name="search_private_knowledge",
+28 &nbsp;&nbsp;&nbsp;&nbsp;arguments={"query":&nbsp;"What is Blue Mango?"}
+29 &nbsp;&nbsp;)
+30 &nbsp;&nbsp;print(result)
+31 
+32 await&nbsp;main()
+      </code></pre>
+    </div>
+    <div class="explanation-pane">
+      <h3>Connecting to a Server</h3>
+      <p>The MCP client needs the URL of a running server. In this example, the server is assumed to be listening on <code>http://127.0.0.1:8011/mcp</code>. Nest asyncio is applied so that asynchronous operations can run inside interactive notebooks.</p>
+      <h3>The Client Wrapper</h3>
+      <p><code>MCPClient</code> provides a single method, <code>call_tool()</code>, which opens a streaming HTTP connection, initialises a <code>ClientSession</code>, and calls the remote tool by name. It unpacks the returned text content and passes it back to the caller.</p>
+      <h3>Example Invocation</h3>
+      <p>The <code>main()</code> function creates a client, then calls the <code>search_private_knowledge</code> tool with a simple question. The server’s response (for example, a definition of “Blue Mango”) is printed. You can adapt this pattern to call any tool your MCP server exposes.</p>
+    </div>
+  </div>
+  <footer>
+    <p>Agentic pattern 9j: a minimal example of calling a remote MCP tool from a client.</p>
+  </footer>
+</body>
+</html>
