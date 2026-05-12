@@ -1,144 +1,625 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <title>Pattern 6: Reasoning and Handoff Explained</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pattern 6 — Reasoning and Handoff</title>
+
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      background: #FFF7ED;
-      color: #1e293b;
       font-family: Inter, Arial, sans-serif;
+      background: #fff8ef;
+      color: #182230;
+      overflow-x: hidden;
       line-height: 1.7;
-      margin: 0;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 217, 102, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 222, 214, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(255, 107, 53, 0.25), transparent 25%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(24, 34, 48, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 34, 48, 0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      z-index: -1;
+    }
+
     header {
-      background: linear-gradient(to right, #fb923c, #f43f5e);
-      padding: 40px 20px;
-      text-align: center;
-      color: white;
-    }
-    header h1 {
-      font-size: 2.3rem;
-      margin-bottom: 10px;
-    }
-    header p {
-      font-size: 1.1rem;
-      margin: 0;
-    }
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      padding: 40px 20px;
-    }
-    .summary {
-      background: #FEF3C7;
-      border-left: 5px solid #F97316;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 40px;
-    }
-    .summary h2 {
-      margin-top: 0;
-    }
-    .code-explanation {
+      padding: 70px 8%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.1fr 0.9fr;
       gap: 40px;
+      align-items: center;
     }
-    .code-block pre {
-      background: #FFFBEB;
-      padding: 20px;
-      border-radius: 12px;
+
+    .hero-left h1 {
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      margin-bottom: 24px;
+      font-weight: 1000;
+    }
+
+    .hero-left h1 span {
+      color: #ff6b35;
+      text-shadow: 5px 5px 0 #182230;
+      -webkit-text-stroke: 2px #182230;
+    }
+
+    .hero-left p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #65ded6;
+      color: #182230;
+      border: 2px solid #182230;
+      box-shadow: 5px 5px 0 #182230;
+      margin-bottom: 24px;
+      font-weight: 1000;
+      font-size: 0.88rem;
+    }
+
+    .pill span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff6b35;
+      border: 2px solid #182230;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 38px;
+      border: 3px solid #182230;
+      box-shadow: 12px 12px 0 #182230;
+      padding: 28px;
+      transform: rotate(2deg);
+    }
+
+    .hero-face {
+      height: 210px;
+      border-radius: 30px;
+      border: 3px solid #182230;
+      background:
+        radial-gradient(circle at 35% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 68%, #ff6b35 0 36px, transparent 37px),
+        #ffd966;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .hero-face::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      border: 6px solid #182230;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-card p {
+      color: #475467;
+      font-weight: 700;
+    }
+
+    .handoff-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .handoff-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 1000;
+      color: #182230;
+    }
+
+    .handoff-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+      background: #65ded6;
+      flex: 0 0 auto;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 8%;
+      border-top: 2px solid #182230;
+      border-bottom: 2px solid #182230;
+      display: flex;
+      gap: 14px;
       overflow-x: auto;
-      white-space: pre;
-      counter-reset: line;
-      font-family: "Source Code Pro", monospace;
-      color: #1e293b;
+      white-space: nowrap;
     }
-    .code-block pre span {
+
+    nav a {
+      text-decoration: none;
+      color: #182230;
+      background: white;
+      border: 2px solid #182230;
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.9rem;
+    }
+
+    nav a:hover {
+      background: #ffd966;
+    }
+
+    main {
+      max-width: 1360px;
+      margin: auto;
+      padding: 70px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .section-title span {
+      background: #ff6b35;
+      color: #182230;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #182230;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.84rem;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 1000;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      padding: 30px;
+    }
+
+    .summary p {
+      color: #475467;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .code-block {
+      border-radius: 36px;
+      overflow: hidden;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      background: #0000aa;
+    }
+
+    .code-header {
+      background: #65ded6;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 1000;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+    }
+
+    .window-dots span:nth-child(1) {
+      background: #ff6b35;
+    }
+
+    .window-dots span:nth-child(2) {
+      background: #ffd966;
+    }
+
+    .window-dots span:nth-child(3) {
+      background: #c6f777;
+    }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 22px;
+      overflow-x: auto;
+      background: #0000aa;
+    }
+
+    .code-block code {
       display: block;
+      font-family: "Courier New", "Lucida Console", monospace;
+      font-size: 0.95rem;
+      line-height: 1.28;
+      color: white;
+      counter-reset: line;
+      font-weight: 700;
     }
-    .code-block pre span::before {
+
+    .code-block code span {
+      display: block;
+      white-space: pre;
+    }
+
+    .code-block code span::before {
       counter-increment: line;
       content: counter(line);
       display: inline-block;
-      width: 35px;
-      margin-right: 10px;
-      color: #A16207;
+      width: 34px;
+      margin-right: 14px;
+      color: #65ded6;
+      opacity: 0.95;
+      user-select: none;
     }
-    .explanation p {
-      margin-bottom: 20px;
-      background: #FFECEC;
-      padding: 15px;
-      border-radius: 12px;
-      border-left: 5px solid #F43F5E;
+
+    .explanation {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      overflow: hidden;
     }
-    .explanation strong {
-      color: #D97706;
+
+    .explanation-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      font-weight: 1000;
     }
-    @media (max-width: 800px) {
-      .code-explanation {
+
+    .explanation-content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .explanation-content p {
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 5px 5px 0 #182230;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .explanation-content strong {
+      color: #ff6b35;
+    }
+
+    code.inline {
+      background: #ffd966;
+      color: #182230;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #182230;
+      font-weight: 1000;
+    }
+
+    .next-box {
+      background: #182230;
+      color: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #ff6b35;
+      padding: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .next-box h2 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 2.5rem;
+    }
+
+    .next-box p {
+      color: #f2f4f7;
+      max-width: 760px;
+      font-weight: 700;
+    }
+
+    .next-box a {
+      text-decoration: none;
+      background: #ffd966;
+      color: #182230;
+      border-radius: 999px;
+      border: 2px solid white;
+      box-shadow: 5px 5px 0 white;
+      padding: 12px 18px;
+      font-weight: 1000;
+    }
+
+    footer {
+      text-align: center;
+      padding: 42px 20px;
+      background: #182230;
+      color: white;
+      font-weight: 1000;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 980px) {
+      header {
         grid-template-columns: 1fr;
+      }
+
+      .code-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      header {
+        padding: 48px 24px;
+      }
+
+      main {
+        padding: 48px 18px;
+      }
+
+      .summary,
+      .code-block,
+      .explanation,
+      .next-box {
+        border-radius: 26px;
       }
     }
   </style>
 </head>
+
 <body>
+
   <header>
-    <h1>Pattern 6: Reasoning and Handoff</h1>
-    <p>Agents reason about their response and decide who speaks next, returning structured JSON.</p>
-  </header>
-  <div class="container">
-    <div class="summary">
-      <h2>Summary</h2>
-      <p>This pattern introduces the concept of a handoff agent. Each agent still derives from a common base class, but instead of returning plain text, it returns a JSON object containing its message, the next agent to speak (<code>handoff_to</code>), and a brief reason. The orchestrator no longer decides who goes next—it simply reads the <code>handoff_to</code> field and routes the conversation accordingly. If JSON parsing fails, a fallback ensures the conversation continues.</p>
+
+    <div class="hero-left">
+
+      <div class="pill">
+        <span></span>
+        Pattern 6 · Handoff
+      </div>
+
+      <h1>Reasoning and <span>Handoff</span></h1>
+
+      <p>
+        In this pattern, agents do not just respond. They reason about who should speak next
+        and return structured JSON containing a message, a handoff target, and a reason.
+      </p>
+
     </div>
-    <div class="code-explanation">
-      <div class="code-block">
-        <pre><code>
-<span>import os</span>
+
+    <div class="hero-card">
+
+      <div class="hero-face"></div>
+
+      <h2>The agent passes the baton.</h2>
+
+      <p>
+        Control flow moves from the orchestrator into the agent response itself.
+      </p>
+
+      <div class="handoff-stack">
+        <div class="handoff-row"><span class="handoff-dot"></span> Agent speaks</div>
+        <div class="handoff-row"><span class="handoff-dot"></span> Agent chooses next speaker</div>
+        <div class="handoff-row"><span class="handoff-dot"></span> Orchestrator follows the handoff</div>
+      </div>
+
+    </div>
+
+  </header>
+
+  <nav>
+    <a href="#summary">Summary</a>
+    <a href="#walkthrough">Code Walkthrough</a>
+    <a href="#next">Next Pattern</a>
+  </nav>
+
+  <main>
+
+    <section id="summary">
+
+      <div class="section-title">
+        <span>OVERVIEW</span>
+        <h2>What this pattern teaches</h2>
+      </div>
+
+      <div class="summary">
+
+        <p>
+          This pattern introduces the handoff agent. Each agent still derives from a common
+          base class, but instead of returning plain text, it returns a JSON object containing
+          <code class="inline">message</code>, <code class="inline">handoff_to</code>,
+          and <code class="inline">reason</code>.
+        </p>
+
+        <p>
+          The orchestrator no longer decides who goes next. It simply reads the
+          <code class="inline">handoff_to</code> field and routes the conversation accordingly.
+          If JSON parsing fails, a fallback ensures the conversation can stop safely.
+        </p>
+
+      </div>
+
+    </section>
+
+    <section id="walkthrough">
+
+      <div class="section-title">
+        <span>CODE</span>
+        <h2>Line-by-line walkthrough</h2>
+      </div>
+
+      <div class="code-layout">
+
+        <div class="code-block">
+
+          <div class="code-header">
+
+            <span>pattern6.py</span>
+
+            <div class="window-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+          </div>
+
+          <pre><code><span>import os</span>
 <span>import json</span>
 <span>from google import genai</span>
 <span>from google.genai import types</span>
 
-<span># Base agent remains similar: stores name, prompt, memory and Gemini client.</span>
+<span># Base agent remains similar.</span>
 <span>class BaseAgent():</span>
+
 <span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash"):</span>
+
 <span>        self.name = name</span>
 <span>        self.sys_prompt = sys_prompt</span>
 <span>        self.memory = []</span>
-<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+
+<span>        self.client = genai.Client(</span>
+<span>            api_key=os.environ.get("GEMINI_API_KEY")</span>
+<span>        )</span>
+
 <span>        self.model = model</span>
+
 <span>    def think(self, input_text):</span>
+
 <span>        if not input_text:</span>
 <span>            input_text = "continue"</span>
-<span>        # Build Gemini request and stream response</span>
+
 <span>        contents = [</span>
-<span>            types.Content(role="user", parts=[types.Part.from_text(text=input_text)])</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=input_text)]</span>
+<span>            )</span>
 <span>        ]</span>
+
 <span>        config = types.GenerateContentConfig(</span>
 <span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
 <span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span>
 <span>        )</span>
+
 <span>        response = ""</span>
+
 <span>        for chunk in self.client.models.generate_content_stream(</span>
-<span>            model=self.model, contents=contents, config=config</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=config</span>
 <span>        ):</span>
+
 <span>            if chunk.text:</span>
 <span>                response += chunk.text</span>
+
 <span>        self.memory.append((input_text, response))</span>
+
 <span>        return response</span>
 
-<span># HandoffAgent: returns JSON with message, handoff_to, and reason.</span>
+<span># HandoffAgent returns JSON with message, handoff_to, and reason.</span>
 <span>class HandoffAgent(BaseAgent):</span>
+
 <span>    def __init__(self, name, persona, peers):</span>
+
 <span>        peer_list = ", ".join(peers)</span>
+
 <span>        super().__init__(</span>
 <span>            name,</span>
 <span>            f"""{persona}</span>
 
-<span>You are part of a multi-agent conversation. After responding, you must decide who speaks next.</span>
+<span>You are part of a multi-agent conversation.</span>
+<span>After responding, you must decide who speaks next.</span>
 
 <span>Available agents to hand off to: {peer_list}</span>
 
@@ -147,78 +628,212 @@
 <span>- handoff_to: one of {peer_list}</span>
 <span>- reason: one sentence justification</span>
 <span>"""</span>
-        )
-    def think_and_handoff(self, input_text):</span>
+<span>        )</span>
+
+<span>    def think_and_handoff(self, input_text):</span>
+
 <span>        raw = self.think(input_text)</span>
-<span>        # Remove markdown fences if present</span>
+
 <span>        clean = raw.strip()</span>
+
 <span>        if clean.startswith("```"):</span>
+
 <span>            parts = clean.split("```")</span>
 <span>            clean = parts[1] if len(parts) > 1 else clean</span>
+
 <span>            if clean.startswith("json"):</span>
 <span>                clean = clean[4:]</span>
+
 <span>        clean = clean.strip()</span>
+
 <span>        try:</span>
+
 <span>            parsed = json.loads(clean)</span>
+
 <span>            return parsed</span>
+
 <span>        except json.JSONDecodeError:</span>
-<span>            # Fallback when parsing fails</span>
+
 <span>            return {</span>
 <span>                "message": raw,</span>
 <span>                "handoff_to": None,</span>
 <span>                "reason": "parse error — orchestrator will decide next agent"</span>
 <span>            }</span>
 
-<span># Specialized agents with different personas</span>
+<span># Specialized agents with different personas.</span>
 <span>class Human(HandoffAgent):</span>
+
 <span>    def __init__(self, name, peers):</span>
-<span>        super().__init__(name, f"You are {name}, a human. Talk naturally and curiously.", peers)</span>
+
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a human. Talk naturally and curiously.",</span>
+<span>            peers</span>
+<span>        )</span>
 
 <span>class Dog(HandoffAgent):</span>
+
 <span>    def __init__(self, name, peers):</span>
-<span>        super().__init__(name, f"You are {name}, a playful dog. You bark, wag, and are enthusiastic.", peers)</span>
+
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a playful dog. You bark, wag, and are enthusiastic.",</span>
+<span>            peers</span>
+<span>        )</span>
 
 <span>class Vet(HandoffAgent):</span>
-<span>    def __init__(self, name, peers):</span>
-<span>        super().__init__(name, f"You are {name}, a veterinarian. You give calm, expert advice about animals.", peers)</span>
 
-<span># Orchestrator: reads handoff_to and routes accordingly</span>
+<span>    def __init__(self, name, peers):</span>
+
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a veterinarian. You give calm, expert advice about animals.",</span>
+<span>            peers</span>
+<span>        )</span>
+
+<span># Orchestrator reads handoff_to and routes accordingly.</span>
 <span>def orchestrate(agents, starter_name, opening_message, turns=6):</span>
+
 <span>    current_name = starter_name</span>
 <span>    message = opening_message</span>
+
 <span>    for i in range(turns):</span>
+
 <span>        current_agent = agents[current_name]</span>
+
 <span>        result = current_agent.think_and_handoff(message)</span>
+
 <span>        print(f"{current_name}: {result.get('message', '')}")</span>
-<span>        print(f"→ Handing off to: {result.get('handoff_to')} | Reason: {result.get('reason')}")</span>
+
+<span>        print(</span>
+<span>            f"→ Handing off to: {result.get('handoff_to')} | "</span>
+<span>            f"Reason: {result.get('reason')}"</span>
+<span>        )</span>
+
 <span>        next_name = result.get("handoff_to")</span>
+
 <span>        if not next_name or next_name not in agents:</span>
+
 <span>            print(f"Invalid handoff target '{next_name}'. Stopping.")</span>
+
 <span>            break</span>
+
 <span>        message = result.get("message", "continue")</span>
+
 <span>        current_name = next_name</span>
 
-<span># Main: set up agents and start conversation</span>
+<span># Main</span>
 <span>if __name__ == "__main__":</span>
+
 <span>    human = Human("Shashank", peers=["Bruno", "DrMehra"])</span>
-<span>    dog   = Dog("Bruno",      peers=["Shashank", "DrMehra"])</span>
-<span>    vet   = Vet("DrMehra",    peers=["Shashank", "Bruno"])</span>
+<span>    dog = Dog("Bruno", peers=["Shashank", "DrMehra"])</span>
+<span>    vet = Vet("DrMehra", peers=["Shashank", "Bruno"])</span>
+
 <span>    agents = {</span>
 <span>        "Shashank": human,</span>
-<span>        "Bruno":    dog,</span>
-<span>        "DrMehra":  vet</span>
+<span>        "Bruno": dog,</span>
+<span>        "DrMehra": vet</span>
 <span>    }</span>
-<span>    orchestrate(agents, starter_name="Shashank", opening_message="Bruno hasn't been eating well lately.", turns=6)</span>
-        </code></pre>
+
+<span>    orchestrate(</span>
+<span>        agents,</span>
+<span>        starter_name="Shashank",</span>
+<span>        opening_message="Bruno hasn't been eating well lately.",</span>
+<span>        turns=6</span>
+<span>    )</span></code></pre>
+
+        </div>
+
+        <div class="explanation">
+
+          <div class="explanation-header">
+            Mental Model
+          </div>
+
+          <div class="explanation-content">
+
+            <p>
+              <strong>Lines 1–4:</strong>
+              Import <code class="inline">os</code>, <code class="inline">json</code>,
+              and the Gemini SDK. The JSON module is needed because each agent now
+              returns structured routing data.
+            </p>
+
+            <p>
+              <strong>Lines 7–47:</strong>
+              Define the shared <code class="inline">BaseAgent</code>. It stores the agent name,
+              prompt, memory, Gemini client, and exposes a reusable
+              <code class="inline">think()</code> method.
+            </p>
+
+            <p>
+              <strong>Lines 50–75:</strong>
+              Define <code class="inline">HandoffAgent</code>. It builds a prompt that forces
+              the model to return a JSON object with a reply, a next speaker, and a reason.
+            </p>
+
+            <p>
+              <strong>Lines 77–105:</strong>
+              <code class="inline">think_and_handoff()</code> calls the model, cleans possible
+              markdown fences, parses JSON, and returns a fallback object if parsing fails.
+            </p>
+
+            <p>
+              <strong>Lines 108–140:</strong>
+              Define specialized handoff agents:
+              <code class="inline">Human</code>, <code class="inline">Dog</code>,
+              and <code class="inline">Vet</code>. Each has its own persona and peer list.
+            </p>
+
+            <p>
+              <strong>Lines 143–176:</strong>
+              The orchestrator reads <code class="inline">handoff_to</code> from the agent’s
+              JSON response and routes control to that next agent.
+            </p>
+
+            <p>
+              <strong>Lines 179–196:</strong>
+              Create the three agents, register them in a dictionary, and start the conversation
+              with a concern about Bruno not eating well.
+            </p>
+
+          </div>
+
+        </div>
+
       </div>
-      <div class="explanation">
-        <p><strong>BaseAgent:</strong> The base class encapsulates common behavior: storing the agent’s name, system prompt, memory, and a Gemini client. The <code>think()</code> method constructs a request, streams the model’s response, appends the conversation to memory, and returns the text.</p>
-        <p><strong>HandoffAgent:</strong> Inherits from <code>BaseAgent</code> and enforces a structured JSON output. Its system prompt lists available peers and instructs the model to return a JSON object with <code>message</code>, <code>handoff_to</code>, and <code>reason</code>. The <code>think_and_handoff()</code> method parses the JSON and falls back gracefully if parsing fails.</p>
-        <p><strong>Specialized Agents:</strong> Three subclasses—<code>Human</code>, <code>Dog</code>, and <code>Vet</code>—define different personas via their prompts and pass along the list of peers who can speak next.</p>
-        <p><strong>Orchestrator:</strong> Instead of deciding the next speaker, the orchestrator reads the <code>handoff_to</code> field from the agent’s JSON response. It prints the agent’s message and handoff decision, then routes the conversation. If the agent hands off to an invalid peer, the conversation stops.</p>
-        <p><strong>Main:</strong> Sets up the agents (Shashank, Bruno, Dr&nbsp;Mehra) with appropriate peers and kicks off the conversation with a concern about Bruno’s eating habits. Each agent thinks, speaks, and decides who should speak next, creating a dynamic, self‑routing dialog.</p>
+
+    </section>
+
+    <section id="next">
+
+      <div class="next-box">
+
+        <div>
+
+          <h2>Next: Supervisor Pattern</h2>
+
+          <p>
+            Pattern 7 introduces a supervisor agent that coordinates specialized workers
+            across a task-oriented workflow.
+          </p>
+
+        </div>
+
+        <a href="pattern7.html">
+          Open Pattern 7 →
+        </a>
+
       </div>
-    </div>
-  </div>
+
+    </section>
+
+  </main>
+
+  <footer>
+    Agentic AI Cookbook · Pattern 6
+  </footer>
+
 </body>
+
 </html>
