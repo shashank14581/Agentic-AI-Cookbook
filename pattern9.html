@@ -5,49 +5,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Pattern 9 — The Debate Pattern</title>
+  <title>Pattern 9 — Fan-Out / Fan-In Debate Agents</title>
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: Inter, Arial, sans-serif;
-      background: #fff1f2;
-      color: #1e293b;
+      background: #fff8ef;
+      color: #182230;
       overflow-x: hidden;
       line-height: 1.7;
     }
-
     body::before {
       content: "";
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at top left, rgba(251, 113, 133, 0.2), transparent 30%),
-        radial-gradient(circle at top right, rgba(253, 186, 116, 0.2), transparent 30%),
-        radial-gradient(circle at bottom left, rgba(225, 29, 72, 0.1), transparent 25%);
+        radial-gradient(circle at top left, rgba(255, 217, 102, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 222, 214, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(255, 107, 53, 0.25), transparent 25%);
       z-index: -2;
     }
-
     body::after {
       content: "";
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(159, 18, 57, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(159, 18, 57, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(24, 34, 48, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 34, 48, 0.03) 1px, transparent 1px);
       background-size: 34px 34px;
       z-index: -1;
     }
-
     header {
       padding: 70px 8%;
       display: grid;
@@ -55,7 +44,6 @@
       gap: 40px;
       align-items: center;
     }
-
     .hero-left h1 {
       font-size: clamp(3rem, 6vw, 5.5rem);
       line-height: 0.95;
@@ -63,324 +51,219 @@
       margin-bottom: 24px;
       font-weight: 1000;
     }
-
     .hero-left h1 span {
-      color: #e11d48;
-      text-shadow: 5px 5px 0 #1e293b;
-      -webkit-text-stroke: 2px #1e293b;
+      color: #ff6b35;
+      text-shadow: 5px 5px 0 #182230;
+      -webkit-text-stroke: 2px #182230;
     }
-
     .hero-left p {
       max-width: 700px;
       font-size: 1.1rem;
-      color: #475569;
+      color: #344054;
       font-weight: 700;
     }
-
     .pill {
       display: inline-flex;
       align-items: center;
       gap: 10px;
       padding: 10px 16px;
       border-radius: 999px;
-      background: #fb7185;
-      color: white;
-      border: 2px solid #1e293b;
-      box-shadow: 5px 5px 0 #1e293b;
+      background: #ffd966;
+      color: #182230;
+      border: 2px solid #182230;
+      box-shadow: 5px 5px 0 #182230;
       margin-bottom: 24px;
       font-weight: 1000;
       font-size: 0.88rem;
     }
-
     .pill span {
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      background: #fff;
-      border: 2px solid #1e293b;
+      background: #ff6b35;
+      border: 2px solid #182230;
     }
-
     .hero-card {
       background: white;
       border-radius: 38px;
-      border: 3px solid #1e293b;
-      box-shadow: 12px 12px 0 #1e293b;
+      border: 3px solid #182230;
+      box-shadow: 12px 12px 0 #182230;
       padding: 28px;
-      transform: rotate(-2deg);
+      transform: rotate(2deg);
     }
-
     .hero-face {
       height: 210px;
       border-radius: 30px;
-      border: 3px solid #1e293b;
+      border: 3px solid #182230;
       background:
-        radial-gradient(circle at 30% 40%, #1e293b 0 12px, transparent 13px),
-        radial-gradient(circle at 70% 40%, #1e293b 0 12px, transparent 13px),
-        radial-gradient(circle at 50% 75%, #e11d48 0 45px, transparent 46px),
-        #ffe4e6;
+        radial-gradient(circle at 35% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 68%, #ff6b35 0 36px, transparent 37px),
+        #ffd966;
       margin-bottom: 24px;
       position: relative;
     }
-
     .hero-face::after {
       content: "";
       position: absolute;
       width: 120px;
-      height: 40px;
-      border: 6px solid #1e293b;
-      border-bottom: 0;
-      border-radius: 90px 90px 0 0;
+      height: 60px;
+      border: 6px solid #182230;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
       left: 50%;
-      top: 55px;
+      bottom: 28px;
       transform: translateX(-50%);
     }
-
-    .hero-card h2 {
-      font-size: 2rem;
-      margin-bottom: 12px;
-      line-height: 1;
-      letter-spacing: -0.04em;
-    }
-
-    .hero-card p {
-      color: #475569;
-      font-weight: 700;
-    }
-
-    .json-stack {
-      display: grid;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
+    .hero-card h2 { font-size: 2rem; margin-bottom: 12px; line-height: 1; letter-spacing: -0.04em; }
+    .hero-card p { color: #475467; font-weight: 700; }
+    .json-stack { display: grid; gap: 12px; margin-top: 18px; }
     .json-row {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: #fff1f2;
-      border: 2px solid #1e293b;
+      background: #fff8ef;
+      border: 2px solid #182230;
       border-radius: 18px;
       padding: 12px;
       font-weight: 1000;
-      color: #1e293b;
+      color: #182230;
     }
-
     .json-dot {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      border: 2px solid #1e293b;
-      background: #fda4af;
+      border: 2px solid #182230;
+      background: #ff6b35;
       flex: 0 0 auto;
     }
-
     nav {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(18px);
       padding: 14px 8%;
-      border-top: 2px solid #1e293b;
-      border-bottom: 2px solid #1e293b;
+      border-top: 2px solid #182230;
+      border-bottom: 2px solid #182230;
       display: flex;
       gap: 14px;
       overflow-x: auto;
       white-space: nowrap;
     }
-
     nav a {
       text-decoration: none;
-      color: #1e293b;
+      color: #182230;
       background: white;
-      border: 2px solid #1e293b;
+      border: 2px solid #182230;
       border-radius: 999px;
       padding: 10px 14px;
-      box-shadow: 4px 4px 0 #1e293b;
+      box-shadow: 4px 4px 0 #182230;
       font-weight: 1000;
       font-size: 0.9rem;
     }
-
-    nav a:hover {
-      background: #fda4af;
-    }
-
-    main {
-      max-width: 1360px;
-      margin: auto;
-      padding: 70px 24px;
-    }
-
-    section {
-      margin-bottom: 90px;
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-
+    nav a:hover { background: #ffd966; }
+    main { max-width: 1360px; margin: auto; padding: 70px 24px; }
+    section { margin-bottom: 90px; }
+    .section-title { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
     .section-title span {
-      background: #e11d48;
-      color: white;
+      background: #ff6b35;
+      color: #182230;
       padding: 8px 14px;
       border-radius: 999px;
-      border: 2px solid #1e293b;
-      box-shadow: 4px 4px 0 #1e293b;
+      border: 2px solid #182230;
+      box-shadow: 4px 4px 0 #182230;
       font-weight: 1000;
       font-size: 0.84rem;
     }
-
-    h2 {
-      font-size: clamp(2.3rem, 4vw, 3.8rem);
-      line-height: 1;
-      letter-spacing: -0.05em;
-      font-weight: 1000;
-    }
-
+    h2 { font-size: clamp(2.3rem, 4vw, 3.8rem); line-height: 1; letter-spacing: -0.05em; font-weight: 1000; }
     .summary {
       background: white;
       border-radius: 36px;
-      border: 3px solid #1e293b;
-      box-shadow: 10px 10px 0 #1e293b;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
       padding: 30px;
     }
-
-    .summary p {
-      color: #475569;
-      font-weight: 700;
-      margin-top: 12px;
-    }
-
-    .code-layout {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 28px;
-      align-items: start;
-    }
-
+    .summary p { color: #475467; font-weight: 700; margin-top: 12px; }
+    .code-layout { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 28px; align-items: start; }
     .code-block {
       border-radius: 36px;
       overflow: hidden;
-      border: 3px solid #1e293b;
-      box-shadow: 10px 10px 0 #1e293b;
-      background: #1e1b4b;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      background: #182230;
     }
-
     .code-header {
-      background: #fb7185;
-      color: #1e293b;
+      background: #ffd966;
+      color: #182230;
       padding: 16px 20px;
-      border-bottom: 3px solid #1e293b;
+      border-bottom: 3px solid #182230;
       display: flex;
       align-items: center;
       justify-content: space-between;
       font-weight: 1000;
     }
-
-    .window-dots {
-      display: flex;
-      gap: 7px;
-    }
-
-    .window-dots span {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      border: 2px solid #1e293b;
-    }
-
-    .window-dots span:nth-child(1) { background: #f87171; }
-    .window-dots span:nth-child(2) { background: #fbbf24; }
-    .window-dots span:nth-child(3) { background: #4ade80; }
-
-    .code-block pre {
-      margin: 0;
-      padding: 18px 22px;
-      overflow-x: auto;
-      background: #1e1b4b;
-    }
-
+    .window-dots { display: flex; gap: 7px; }
+    .window-dots span { width: 13px; height: 13px; border-radius: 50%; border: 2px solid #182230; }
+    .window-dots span:nth-child(1) { background: #ff6b35; }
+    .window-dots span:nth-child(2) { background: #ffd966; }
+    .window-dots span:nth-child(3) { background: #65ded6; }
+    .code-block pre { margin: 0; padding: 18px 22px; overflow-x: auto; background: #182230; max-height: 920px; }
     .code-block code {
       display: block;
-      font-family: "Source Code Pro", monospace;
-      font-size: 0.95rem;
+      font-family: "Courier New", monospace;
+      font-size: 0.9rem;
       line-height: 1.4;
-      color: #fce7f3;
+      color: #fff8ef;
       counter-reset: line;
-      font-weight: 600;
+      font-weight: 700;
     }
-
-    .code-block code span {
-      display: block;
-      white-space: pre;
-    }
-
+    .code-block code span { display: block; white-space: pre; }
     .code-block code span::before {
       counter-increment: line;
       content: counter(line);
       display: inline-block;
       width: 34px;
       margin-right: 14px;
-      color: #fb7185;
-      opacity: 0.7;
+      color: #ffd966;
+      opacity: 0.95;
       user-select: none;
     }
-
     .explanation {
       background: white;
       border-radius: 36px;
-      border: 3px solid #1e293b;
-      box-shadow: 10px 10px 0 #1e293b;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
       overflow: hidden;
+      position: sticky;
+      top: 92px;
     }
-
-    .explanation-header {
-      background: #fda4af;
-      color: #1e293b;
-      padding: 16px 20px;
-      border-bottom: 3px solid #1e293b;
-      font-weight: 1000;
-    }
-
-    .explanation-content {
-      padding: 24px;
-      display: grid;
-      gap: 18px;
-    }
-
+    .explanation-header { background: #ffd966; color: #182230; padding: 16px 20px; border-bottom: 3px solid #182230; font-weight: 1000; }
+    .explanation-content { padding: 24px; display: grid; gap: 18px; }
     .explanation-content p {
-      background: #fff1f2;
-      border: 2px solid #1e293b;
+      background: #fff8ef;
+      border: 2px solid #182230;
       border-radius: 22px;
       padding: 18px;
-      box-shadow: 5px 5px 0 #1e293b;
-      color: #334155;
+      box-shadow: 5px 5px 0 #182230;
+      color: #344054;
       font-weight: 700;
     }
-
-    .explanation-content strong {
-      color: #e11d48;
-    }
-
+    .explanation-content strong { color: #ff6b35; }
     code.inline {
-      background: #ffe4e6;
-      color: #1e293b;
+      background: #ffd966;
+      color: #182230;
       padding: 3px 8px;
       border-radius: 8px;
-      border: 1.5px solid #1e293b;
+      border: 1.5px solid #182230;
       font-weight: 1000;
     }
-
     .next-box {
-      background: #1e293b;
+      background: #182230;
       color: white;
       border-radius: 36px;
-      border: 3px solid #1e293b;
-      box-shadow: 10px 10px 0 #e11d48;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #ff6b35;
       padding: 34px;
       display: flex;
       justify-content: space-between;
@@ -388,42 +271,23 @@
       gap: 20px;
       flex-wrap: wrap;
     }
-
-    .next-box h2 {
-      color: white;
-      margin-bottom: 12px;
-      font-size: 2.5rem;
-    }
-
-    .next-box p {
-      color: #f1f5f9;
-      max-width: 760px;
-      font-weight: 700;
-    }
-
+    .next-box h2 { color: white; margin-bottom: 12px; font-size: 2.5rem; }
+    .next-box p { color: #f2f4f7; max-width: 760px; font-weight: 700; }
     .next-box a {
       text-decoration: none;
-      background: #fb7185;
-      color: white;
+      background: #ffd966;
+      color: #182230;
       border-radius: 999px;
       border: 2px solid white;
       box-shadow: 5px 5px 0 white;
       padding: 12px 18px;
       font-weight: 1000;
     }
-
-    footer {
-      text-align: center;
-      padding: 42px 20px;
-      background: #1e293b;
-      color: white;
-      font-weight: 1000;
-      margin-top: 60px;
-    }
-
+    footer { text-align: center; padding: 42px 20px; background: #182230; color: white; font-weight: 1000; margin-top: 60px; }
     @media (max-width: 980px) {
       header { grid-template-columns: 1fr; }
       .code-layout { grid-template-columns: 1fr; }
+      .explanation { position: static; }
     }
   </style>
 </head>
@@ -432,26 +296,21 @@
 
   <header>
     <div class="hero-left">
-      <div class="pill">
-        <span></span>
-        Pattern 9 · Multi-Agent Debate
-      </div>
-      <h1>The <span>Debate</span> Pattern</h1>
+      <div class="pill"><span></span>Pattern 9 · Fan-Out / Fan-In</div>
+      <h1>Debate <span>Agent Workflow</span></h1>
       <p>
-        In this pattern, multiple agents with conflicting personas argue 
-        over a topic. By forcing agents to defend opposing views, we surface 
-        nuances, detect biases, and reach a more balanced conclusion.
+        This pattern demonstrates a multi-agent debate system. Two debaters speak in parallel, two critics cross-examine in parallel, and a judge performs the final fan-in by combining all arguments into a verdict.
       </p>
     </div>
 
     <div class="hero-card">
       <div class="hero-face"></div>
-      <h2>Clash of the Agents.</h2>
-      <p>Truth emerges when specialized agents challenge each other's reasoning.</p>
+      <h2>Parallel agents, merged judgment.</h2>
+      <p>A clean fan-out/fan-in orchestration pattern using async Gemini agents.</p>
       <div class="json-stack">
-        <div class="json-row"><span class="json-dot"></span> Persona A Argues</div>
-        <div class="json-row"><span class="json-dot"></span> Persona B Rebuts</div>
-        <div class="json-row"><span class="json-dot"></span> Judge Synthesizes</div>
+        <div class="json-row"><span class="json-dot"></span> Fan-Out Positions</div>
+        <div class="json-row"><span class="json-dot"></span> Cross-Critique</div>
+        <div class="json-row"><span class="json-dot"></span> Fan-In Verdict</div>
       </div>
     </div>
   </header>
@@ -470,14 +329,10 @@
       </div>
       <div class="summary">
         <p>
-          A <strong>Debate Pattern</strong> uses three distinct agents: a <code class="inline">Proponent</code>, an 
-          <code class="inline">Opponent</code>, and a <code class="inline">Judge</code>. 
-          The goal isn't just to generate text, but to iterate through several rounds of arguments.
+          <strong>Pattern 9</strong> shows how multiple agents can work in parallel and then converge into one final answer. The first fan-out creates two opposing positions at the same time. The second fan-out creates two critiques at the same time. The fan-in stage sends all outputs to a judge agent.
         </p>
         <p>
-          The Proponent presents a case, the Opponent finds flaws, and the cycle repeats. 
-          Finally, the Judge reviews the entire transcript to provide a neutral, 
-          comprehensive verdict. This helps mitigate "hallucinations" and one-sided logic.
+          This pattern is useful for adversarial reasoning, decision review, argument testing, critique loops, and any workflow where independent perspectives need to be generated before a final synthesis.
         </p>
       </div>
     </section>
@@ -491,50 +346,193 @@
       <div class="code-layout">
         <div class="code-block">
           <div class="code-header">
-            <span>pattern9.py</span>
+            <span>pattern9_debate_fanout_fanin.py</span>
             <div class="window-dots"><span></span><span></span><span></span></div>
           </div>
           <pre><code><span>import os</span>
+<span>import asyncio</span>
 <span>from google import genai</span>
-
-<span>class Debater:</span>
-<span>    def __init__(self, name, persona):</span>
+<span>from google.genai import types</span>
+<span></span>
+<span></span>
+<span># ── Base Agent ────────────────────────────────────────────────────────────────</span>
+<span></span>
+<span>class BaseAgent:</span>
+<span>    def __init__(self, name: str, sys_prompt: str, model: str = "gemini-2.5-flash-lite"):</span>
 <span>        self.name = name</span>
-<span>        self.persona = persona</span>
-<span>        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))</span>
-
-<span>    def argue(self, context):</span>
-<span>        prompt = f"{self.persona}\n\nContext:\n{context}\n\nYour turn:"</span>
-<span>        response = self.client.models.generate_content(</span>
-<span>            model="gemini-2.5-flash", contents=prompt</span>
+<span>        self.sys_prompt = sys_prompt</span>
+<span>        self.memory: list[tuple[str, str]] = []</span>
+<span>        self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])</span>
+<span>        self.model = model</span>
+<span>        self._config = types.GenerateContentConfig(</span>
+<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)],</span>
 <span>        )</span>
-<span>        return response.text</span>
-
-<span>def conduct_debate(topic, rounds=2):</span>
-<span>    pro = Debater("Pro", f"Defend the idea: {topic}")</span>
-<span>    con = Debater("Con", f"Oppose the idea: {topic}")</span>
-<span>    judge = Debater("Judge", "You are a neutral judge. Summarize both sides.")</span>
-<span>    </span>
-<span>    history = f"Topic: {topic}\n"</span>
-<span>    </span>
-<span>    for i in range(rounds):</span>
-<span>        pro_arg = pro.argue(history)</span>
-<span>        history += f"\nPro: {pro_arg}"</span>
-<span>        </span>
-<span>        con_arg = con.argue(history)</span>
-<span>        history += f"\nCon: {con_arg}"</span>
-<span>        </span>
-<span>    verdict = judge.argue(history)</span>
-<span>    return verdict</span></code></pre>
+<span></span>
+<span>    async def think(self, input_text: str) -&gt; str:</span>
+<span>        contents = [</span>
+<span>            types.Content(</span>
+<span>                role="user",</span>
+<span>                parts=[types.Part.from_text(text=input_text)],</span>
+<span>            )</span>
+<span>        ]</span>
+<span>        response = ""</span>
+<span>        stream = await self.client.aio.models.generate_content_stream(</span>
+<span>            model=self.model,</span>
+<span>            contents=contents,</span>
+<span>            config=self._config,</span>
+<span>        )</span>
+<span>        async for chunk in stream:</span>
+<span>            if chunk.text:</span>
+<span>                print(chunk.text, end="", flush=True)</span>
+<span>                response += chunk.text</span>
+<span>        print()</span>
+<span>        self.memory.append((input_text, response))</span>
+<span>        return response</span>
+<span></span>
+<span></span>
+<span># ── Agent Roles ───────────────────────────────────────────────────────────────</span>
+<span></span>
+<span>class Debater(BaseAgent):</span>
+<span>    def __init__(self, name: str, stance: str):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}. You firmly believe: {stance}. "</span>
+<span>            "State your position in 3 sharp sentences. No hedging.",</span>
+<span>        )</span>
+<span></span>
+<span></span>
+<span>class Critic(BaseAgent):</span>
+<span>    def __init__(self, name: str):</span>
+<span>        super().__init__(</span>
+<span>            name,</span>
+<span>            f"You are {name}, a sharp cross-examiner. "</span>
+<span>            "You will be given an opponent's argument. "</span>
+<span>            "Identify its weakest point and attack it in 2 sentences.",</span>
+<span>        )</span>
+<span></span>
+<span></span>
+<span>class Judge(BaseAgent):</span>
+<span>    def __init__(self):</span>
+<span>        super().__init__(</span>
+<span>            "Judge",</span>
+<span>            "You are an impartial judge. "</span>
+<span>            "You will receive two positions and two critiques. "</span>
+<span>            "Weigh the arguments. Pick the stronger side. "</span>
+<span>            "State your verdict and reasoning in 3 sentences. "</span>
+<span>            "Do not sit on the fence.",</span>
+<span>        )</span>
+<span></span>
+<span></span>
+<span># ── Stage 1 — Fan-Out: Parallel Positions ────────────────────────────────────</span>
+<span></span>
+<span>async def opening_positions(topic: str, debater_a: Debater, debater_b: Debater) -&gt; tuple[str, str]:</span>
+<span>    print(f"\n{'='*60}")</span>
+<span>    print(f"TOPIC: {topic}")</span>
+<span>    print(f"{'='*60}")</span>
+<span>    print("\n[Stage 1] Opening positions …\n")</span>
+<span></span>
+<span>    async def speak(agent: Debater) -&gt; str:</span>
+<span>        print(f"\n── {agent.name} ──")</span>
+<span>        return await agent.think(f"State your position on: {topic}")</span>
+<span></span>
+<span>    position_a, position_b = await asyncio.gather(</span>
+<span>        speak(debater_a),</span>
+<span>        speak(debater_b),</span>
+<span>    )</span>
+<span></span>
+<span>    return position_a, position_b</span>
+<span></span>
+<span></span>
+<span># ── Stage 2 — Cross-Critique: Each Attacks the Other ─────────────────────────</span>
+<span></span>
+<span>async def cross_critique(</span>
+<span>    debater_a: Debater, position_a: str,</span>
+<span>    debater_b: Debater, position_b: str,</span>
+<span>) -&gt; tuple[str, str]:</span>
+<span>    print("\n[Stage 2] Cross-critique …\n")</span>
+<span></span>
+<span>    critic_a = Critic(f"{debater_a.name} (cross-examining)")</span>
+<span>    critic_b = Critic(f"{debater_b.name} (cross-examining)")</span>
+<span></span>
+<span>    async def attack(critic: Critic, opponent_name: str, opponent_position: str) -&gt; str:</span>
+<span>        print(f"\n── {critic.name} ──")</span>
+<span>        return await critic.think(f"{opponent_name} argued: {opponent_position}")</span>
+<span></span>
+<span>    critique_by_a, critique_by_b = await asyncio.gather(</span>
+<span>        attack(critic_a, debater_b.name, position_b),</span>
+<span>        attack(critic_b, debater_a.name, position_a),</span>
+<span>    )</span>
+<span></span>
+<span>    return critique_by_a, critique_by_b</span>
+<span></span>
+<span></span>
+<span># ── Stage 3 — Fan-In: Judge Decides ──────────────────────────────────────────</span>
+<span></span>
+<span>async def verdict(</span>
+<span>    debater_a: Debater, position_a: str, critique_by_b: str,</span>
+<span>    debater_b: Debater, position_b: str, critique_by_a: str,</span>
+<span>) -&gt; str:</span>
+<span>    print("\n[Stage 3] Verdict …\n")</span>
+<span></span>
+<span>    judge = Judge()</span>
+<span></span>
+<span>    prompt = (</span>
+<span>        f"{debater_a.name} argued:\n{position_a}\n\n"</span>
+<span>        f"{debater_b.name} cross-examined {debater_a.name}:\n{critique_by_b}\n\n"</span>
+<span>        f"{debater_b.name} argued:\n{position_b}\n\n"</span>
+<span>        f"{debater_a.name} cross-examined {debater_b.name}:\n{critique_by_a}\n\n"</span>
+<span>        "Render your verdict."</span>
+<span>    )</span>
+<span></span>
+<span>    print("── Judge ──")</span>
+<span>    return await judge.think(prompt)</span>
+<span></span>
+<span></span>
+<span># ── Main ──────────────────────────────────────────────────────────────────────</span>
+<span></span>
+<span>async def main():</span>
+<span>    topic = "AI will eliminate more jobs than it creates in the next decade"</span>
+<span></span>
+<span>    debater_a = Debater("Arjun", "AI is a net job destroyer — history will not repeat itself this time")</span>
+<span>    debater_b = Debater("Meera", "AI is a net job creator — every technology wave has expanded human work")</span>
+<span></span>
+<span>    position_a, position_b = await opening_positions(topic, debater_a, debater_b)</span>
+<span></span>
+<span>    critique_by_a, critique_by_b = await cross_critique(</span>
+<span>        debater_a, position_a,</span>
+<span>        debater_b, position_b,</span>
+<span>    )</span>
+<span></span>
+<span>    final_verdict = await verdict(</span>
+<span>        debater_a, position_a, critique_by_b,</span>
+<span>        debater_b, position_b, critique_by_a,</span>
+<span>    )</span>
+<span></span>
+<span>    print("\n" + "="*60)</span>
+<span>    print("VERDICT")</span>
+<span>    print("="*60)</span>
+<span>    print(final_verdict)</span>
+<span></span>
+<span></span>
+<span>import nest_asyncio</span>
+<span>nest_asyncio.apply()</span>
+<span></span>
+<span>if __name__ == "__main__":</span>
+<span>    asyncio.run(main())</span></code></pre>
         </div>
 
         <div class="explanation">
           <div class="explanation-header">Mental Model</div>
           <div class="explanation-content">
-            <p><strong>Lines 4-15:</strong> The <code class="inline">Debater</code> class encapsulates a specific viewpoint. The <code class="inline">argue</code> method takes the current <code class="inline">history</code> (the context) to generate the next logical counter-point.</p>
-            <p><strong>Lines 18-21:</strong> We initialize three specialized instances. By assigning them strict, opposing personas, we force Gemini to explore the edge cases of the topic.</p>
-            <p><strong>Lines 25-31:</strong> The main debate loop. Note how the <code class="inline">history</code> grows each turn. Each agent "sees" what the other just said, allowing for direct rebuttals rather than isolated statements.</p>
-            <p><strong>Line 33:</strong> The <code class="inline">Judge</code> doesn't participate in the fight. They wait until the "dust settles" to analyze the quality of arguments from both sides.</p>
+            <p><strong>Lines 1-4:</strong> Import async support and Gemini SDK components. The whole pattern depends on concurrent agent calls.</p>
+            <p><strong>Lines 9-40:</strong> <code class="inline">BaseAgent</code> wraps Gemini streaming, stores memory, and exposes an async <code class="inline">think()</code> method that every role can reuse.</p>
+            <p><strong>Lines 45-75:</strong> Three roles are defined: <code class="inline">Debater</code> argues from a fixed stance, <code class="inline">Critic</code> attacks weak points, and <code class="inline">Judge</code> weighs everything and decides.</p>
+            <p><strong>Lines 82-101:</strong> Stage 1 is fan-out. <code class="inline">asyncio.gather()</code> lets Arjun and Meera produce opening positions at the same time.</p>
+            <p><strong>Lines 108-130:</strong> Stage 2 is another fan-out. Each side cross-examines the other position concurrently through critic agents.</p>
+            <p><strong>Lines 137-160:</strong> Stage 3 is fan-in. The judge receives both arguments and both critiques in one combined prompt, then renders a verdict.</p>
+            <p><strong>Lines 166-195:</strong> The main function wires the debate together: topic, debaters, opening positions, critiques, verdict, and final printed output.</p>
+            <p><strong>Lines 198-202:</strong> <code class="inline">nest_asyncio</code> makes this friendlier in notebook environments, while <code class="inline">asyncio.run()</code> runs the workflow as a script.</p>
           </div>
         </div>
       </div>
@@ -543,8 +541,8 @@
     <section id="next">
       <div class="next-box">
         <div>
-          <h2>Next: Re-ranking and Best-of-N</h2>
-          <p>Pattern 10 introduces a verification step where multiple solutions are generated and the agent picks the objectively best one.</p>
+          <h2>Next Step: More Agent Coordination</h2>
+          <p>The next pattern can extend this by adding a supervisor, a moderator, or dynamic turn-taking between agents instead of a fixed three-stage debate.</p>
         </div>
         <a href="pattern10.html">Open Pattern 10 →</a>
       </div>
