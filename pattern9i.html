@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern 9i – MCP Protocol Walkthrough</title>
+  <style>
+    /*
+      This page introduces the Model Context Protocol (MCP) pattern. A
+      lightweight HTTP server exposes private knowledge as callable tools
+      and Gemini is configured to invoke those tools when needed. A teal
+      and blue gradient reflects the bridging between internal knowledge
+      and external reasoning.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #e6fffa;
+      color: #1d4044;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #4fd1c5, #2b6cb0);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #e0f2fe;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1400px;
+      margin: auto;
+    }
+    .code-pane {
+      background: #f0ffff;
+      border: 1px solid #c4f1f9;
+      border-radius: 12px;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    .code-pane pre {
+      margin: 0;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+    .explanation-pane {
+      background: #f7fafc;
+      border: 1px solid #cbd5e0;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .explanation-pane h3 {
+      margin-top: 0;
+      color: #2c5282;
+    }
+    .explanation-pane p {
+      margin: 0.75rem 0;
+    }
+    .explanation-pane ul {
+      margin: 0.5rem 0 0.75rem 1.2rem;
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      background: #2c5282;
+      color: #b2f5ea;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 9i – MCP Protocol Walkthrough</h1>
+    <p>A private MCP server exposes internal knowledge through callable tools. Gemini discovers and invokes these tools when answering questions about confidential projects.</p>
+  </header>
+  <div class="container">
+    <div class="code-pane">
+      <pre><code>
+1 !pip&nbsp;install&nbsp;-q&nbsp;google-genai&nbsp;"mcp[cli]"&nbsp;uvicorn&nbsp;nest_asyncio
+2 
+3 import&nbsp;os, time, socket, threading
+4 import&nbsp;nest_asyncio
+5 
+6 from&nbsp;google&nbsp;import&nbsp;genai
+7 from&nbsp;google.genai&nbsp;import&nbsp;types
+8 from&nbsp;mcp.server.fastmcp&nbsp;import&nbsp;FastMCP
+9 from&nbsp;mcp&nbsp;import&nbsp;ClientSession
+10 from&nbsp;mcp.client.streamable_http&nbsp;import&nbsp;streamablehttp_client
+11 
+12 nest_asyncio.apply()
+13 os.environ["GEMINI_API_KEY"]&nbsp;=&nbsp;"your_api_key"
+14 
+15 # CONFIG
+16 PORT&nbsp;=&nbsp;8011
+17 MCP_URL&nbsp;=&nbsp;f"http://127.0.0.1:{PORT}/mcp"
+18 
+19 # REAL MCP SERVER
+20 mcp&nbsp;=&nbsp;FastMCP(name="private_knowledge_server",stateless_http=True,json_response=True)
+21 
+22 @mcp.tool()
+23 def&nbsp;search_private_knowledge(query:&nbsp;str)&nbsp;->&nbsp;str:
+24 &nbsp;&nbsp;query&nbsp;=&nbsp;query.lower()
+25 &nbsp;&nbsp;if&nbsp;any(word&nbsp;in&nbsp;query&nbsp;for&nbsp;word&nbsp;in&nbsp;["owner","ownership","failure","failures"]):
+26 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"The fallback owner for Blue Mango failures is Aniket from the DS Ops team."
+27 &nbsp;&nbsp;if&nbsp;any(word&nbsp;in&nbsp;query&nbsp;for&nbsp;word&nbsp;in&nbsp;["0.62","confidence","threshold"]):
+28 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"If Blue Mango confidence drops below 0.62, the audience must be routed to the Silver Gate manual review queue."
+29 &nbsp;&nbsp;if&nbsp;"silver gate"&nbsp;in&nbsp;query:
+30 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Silver Gate is the manual review queue for Project Sarayu."
+31 &nbsp;&nbsp;if&nbsp;"blue mango"&nbsp;in&nbsp;query:
+32 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Blue Mango is the internal codename for the customer retention model in Project Sarayu."
+33 &nbsp;&nbsp;return&nbsp;"No private knowledge found."
+34 
+35 def&nbsp;run_mcp_server():
+36 &nbsp;&nbsp;mcp.settings.port&nbsp;=&nbsp;PORT
+37 &nbsp;&nbsp;mcp.run(transport="streamable-http")
+38 
+39 def&nbsp;port_is_busy(port):
+40 &nbsp;&nbsp;with&nbsp;socket.socket(socket.AF_INET,&nbsp;socket.SOCK_STREAM)&nbsp;as&nbsp;s:
+41 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;s.connect_ex(("127.0.0.1",&nbsp;port))&nbsp;==&nbsp;0
+42 
+43 if&nbsp;not&nbsp;port_is_busy(PORT):
+44 &nbsp;&nbsp;server_thread&nbsp;=&nbsp;threading.Thread(target=run_mcp_server,daemon=True)
+45 &nbsp;&nbsp;server_thread.start()
+46 &nbsp;&nbsp;time.sleep(3)
+47 &nbsp;&nbsp;print(f"MCP server started on port {PORT}.")
+48 else:
+49 &nbsp;&nbsp;print(f"MCP server already running on port {PORT}. Reusing it.")
+50 
+51 # MCP CLIENT
+52 class MCPClient:
+53 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;url=MCP_URL):
+54 &nbsp;&nbsp;&nbsp;&nbsp;self.url&nbsp;=&nbsp;url
+55 
+56 &nbsp;&nbsp;async&nbsp;def&nbsp;call_tool(self,&nbsp;tool_name,&nbsp;arguments):
+57 &nbsp;&nbsp;&nbsp;&nbsp;async&nbsp;with&nbsp;streamablehttp_client(self.url)&nbsp;as&nbsp;(read,&nbsp;write,&nbsp;_):
+58 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;async&nbsp;with&nbsp;ClientSession(read,&nbsp;write)&nbsp;as&nbsp;session:
+59 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;await&nbsp;session.initialize()
+60 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result&nbsp;=&nbsp;await&nbsp;session.call_tool(name=tool_name,arguments=arguments)
+61 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;result.content[0].text
+62 
+63 # GEMINI BASE AGENT USING types.Tool
+64 class BaseAgent:
+65 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;name,&nbsp;sys_prompt,&nbsp;mcp_client,&nbsp;model="gemini-3.1-flash-lite"):
+66 &nbsp;&nbsp;&nbsp;&nbsp;self.name&nbsp;=&nbsp;name
+67 &nbsp;&nbsp;&nbsp;&nbsp;self.sys_prompt&nbsp;=&nbsp;sys_prompt
+68 &nbsp;&nbsp;&nbsp;&nbsp;self.mcp_client&nbsp;=&nbsp;mcp_client
+69 &nbsp;&nbsp;&nbsp;&nbsp;self.client&nbsp;=&nbsp;genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+70 &nbsp;&nbsp;&nbsp;&nbsp;self.model&nbsp;=&nbsp;model
+71 &nbsp;&nbsp;&nbsp;&nbsp;self.memory&nbsp;=&nbsp;[]
+72 
+73 &nbsp;&nbsp;async&nbsp;def&nbsp;think(self,&nbsp;input_text):
+74 &nbsp;&nbsp;&nbsp;&nbsp;tool&nbsp;=&nbsp;types.Tool(function_declarations=[
+75 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;types.FunctionDeclaration(name="search_private_knowledge",description="Search private MCP knowledge base for internal project facts.",parameters=types.Schema(type=types.Type.OBJECT,properties={"query":types.Schema(type=types.Type.STRING,description="Search query for private knowledge")},required=["query"]))
+76 &nbsp;&nbsp;&nbsp;&nbsp;])
+77 &nbsp;&nbsp;&nbsp;&nbsp;response&nbsp;=&nbsp;self.client.models.generate_content(
+78 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model=self.model,
+79 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;contents=[types.Content(role="user",parts=[types.Part.from_text(text=input_text)])],
+80 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;config=types.GenerateContentConfig(thinking_config=types.ThinkingConfig(thinking_budget=0),system_instruction=[types.Part.from_text(text=self.sys_prompt)],tools=[tool])
+81 &nbsp;&nbsp;&nbsp;&nbsp;)
+82 &nbsp;&nbsp;&nbsp;&nbsp;part&nbsp;=&nbsp;response.candidates[0].content.parts[0]
+83 &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;part.function_call:
+84 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tool_name&nbsp;=&nbsp;part.function_call.name
+85 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arguments&nbsp;=&nbsp;dict(part.function_call.args)
+86 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(f"\n[Gemini selected MCP tool:&nbsp;{tool_name}]")
+87 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print(arguments)
+88 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;answer&nbsp;=&nbsp;await&nbsp;self.mcp_client.call_tool(tool_name=tool_name,arguments=arguments)
+89 &nbsp;&nbsp;&nbsp;&nbsp;else:
+90 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;answer&nbsp;=&nbsp;response.text
+91 &nbsp;&nbsp;&nbsp;&nbsp;print(answer)
+92 &nbsp;&nbsp;&nbsp;&nbsp;self.memory.append((input_text,&nbsp;answer))
+93 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;answer
+94 
+95 # MCP RAG AGENT
+96 class MCPRAGAgent(BaseAgent):
+97 &nbsp;&nbsp;def&nbsp;__init__(self,&nbsp;name,&nbsp;mcp_client):
+98 &nbsp;&nbsp;&nbsp;&nbsp;super().__init__(
+99 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name=name,
+100 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys_prompt="""
+101 You are an MCP RAG Agent.
+102 
+103 Use the MCP tool when the user asks about private/internal project facts.
+104 Do not invent private information.
+105 """,
+106 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mcp_client=mcp_client
+107 &nbsp;&nbsp;&nbsp;&nbsp;)
+108 
+109 # ORCHESTRATION
+110 async&nbsp;def&nbsp;main():
+111 &nbsp;&nbsp;mcp_client&nbsp;=&nbsp;MCPClient()
+112 &nbsp;&nbsp;agent&nbsp;=&nbsp;MCPRAGAgent(name="MCPRAGAgent",mcp_client=mcp_client)
+113 &nbsp;&nbsp;questions&nbsp;=&nbsp;["What is Blue Mango?","Who owns Blue Mango failures?","What happens if confidence drops below 0.62?","What is Silver Gate?"]
+114 &nbsp;&nbsp;for&nbsp;question&nbsp;in&nbsp;questions:
+115 &nbsp;&nbsp;&nbsp;&nbsp;print(f"\nUser:&nbsp;{question}")
+116 &nbsp;&nbsp;&nbsp;&nbsp;print(f"{agent.name}:&nbsp;",end="")
+117 &nbsp;&nbsp;&nbsp;&nbsp;await&nbsp;agent.think(question)
+118 
+119 await&nbsp;main()
+      </code></pre>
+    </div>
+    <div class="explanation-pane">
+      <h3>Starting the MCP Server</h3>
+      <p>The script begins by configuring a <code>FastMCP</code> server on port 8011. The <code>search_private_knowledge</code> tool is registered via a decorator; it inspects a lowercase query and returns a canned answer for known patterns (owners, thresholds, Silver Gate, Blue Mango). If no match is found, it returns a default message. The server is started in a separate thread only if the port is free.</p>
+      <h3>MCP Client</h3>
+      <p>The <code>MCPClient</code> wraps the protocol’s HTTP client. When <code>call_tool()</code> is invoked, it creates a streaming session, initialises it, and then calls the specified tool with the provided arguments. The result is extracted from the response and returned as plain text.</p>
+      <h3>Gemini Agent with Tools</h3>
+      <p>The asynchronous <code>BaseAgent</code> defines a single tool using <code>types.FunctionDeclaration</code>. In <code>think()</code>, the agent asks Gemini to generate content; the configuration includes the system prompt and the list of tools. When Gemini decides to call a tool, the agent prints the chosen tool name and arguments, then delegates to the <code>MCPClient</code> to execute the call. Otherwise the model’s free‑form answer is printed.</p>
+      <h3>MCP RAG Agent and Orchestration</h3>
+      <p><code>MCPRAGAgent</code> simply sets a system prompt reminding Gemini to use the MCP tool for private facts. In the <code>main()</code> function the server is started (if needed), a client and agent are created, and a list of questions is processed asynchronously. Each question is printed along with the agent’s response, which may or may not involve a tool call.</p>
+    </div>
+  </div>
+  <footer>
+    <p>Agentic pattern 9i: connect Gemini to a private knowledge base via the Model Context Protocol.</p>
+  </footer>
+</body>
+</html>
