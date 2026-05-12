@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Pattern 13 — RAG Agent with Vector Search</title>
+  <title>Pattern 13 — Agents who Chunk and Embed</title>
 
   <style>
     * {
@@ -155,7 +155,8 @@
 
     .json-row {
       display: flex;
-      align-items: center; gap: 12px;
+      align-items: center;
+      gap: 12px;
       background: #fff8ef;
       border: 2px solid #182230;
       border-radius: 18px;
@@ -435,20 +436,20 @@
         <span></span>
         Pattern 13 · Retrieval
       </div>
-      <h1><span>Vector Search</span> RAG Agent</h1>
+      <h1>Agents who <span>Chunk and Embed</span></h1>
       <p>
-        In this pattern, we build a local Retrieval-Augmented Generation (RAG) system from scratch. Documents are chunked, embedded into vectors using PyTorch, and stored in a vector store to give the agent grounded, private knowledge.
+        In this pattern, we build a local Retrieval-Augmented Generation (RAG) system from scratch. Documents are broken into manageable chunks and converted into neural embedding vectors to provide the agent with grounded, high-precision context.
       </p>
     </div>
 
     <div class="hero-card">
       <div class="hero-face"></div>
-      <h2>Semantic Knowledge Retrieval.</h2>
-      <p>Using vector similarity to find the most relevant context for questions.</p>
+      <h2>Semantic Retrieval from Scratch.</h2>
+      <p>Implementing chunking and embedding logic to create a functional RAG pipeline.</p>
       <div class="json-stack">
-        <div class="json-row"><span class="json-dot"></span> Chunking & Overlap</div>
+        <div class="json-row"><span class="json-dot"></span> Manual Text Chunking</div>
         <div class="json-row"><span class="json-dot"></span> PyTorch Embedding Model</div>
-        <div class="json-row"><span class="json-dot"></span> Cosine Similarity Search</div>
+        <div class="json-row"><span class="json-dot"></span> Vector Similarity Search</div>
       </div>
     </div>
   </header>
@@ -467,10 +468,10 @@
       </div>
       <div class="summary">
         <p>
-          The <strong>RAG Agent</strong> (Pattern 13) demonstrates the complete pipeline for grounded AI. Instead of relying on the model's training data, we provide it with a specific <strong>Document</strong> that it uses as its only source of truth.
+          The <strong>Chunk and Embed</strong> pattern (Pattern 13) demonstrates the mechanical foundation of RAG. Instead of relying on external vector databases, we implement a <code class="inline">Chunker</code> to split text with overlap and a <code class="inline">SimpleEmbeddingModel</code> using PyTorch.
         </p>
         <p>
-          The code implements a <code class="inline">Chunker</code> to break text into pieces, a <code class="inline">SimpleEmbeddingModel</code> to create numerical representations (vectors) of those pieces, and a <code class="inline">VectorStore</code> to perform similarity searches between the user's question and the stored data.
+          This pattern highlights how <strong>Chunking</strong> controls the memory boundaries of the system and <strong>Embedding</strong> captures the semantic meaning. Together, they allow an agent to retrieve relevant facts from a large document to answer questions without "guessing" or hallucinating.
         </p>
       </div>
     </section>
@@ -484,7 +485,7 @@
       <div class="code-layout">
         <div class="code-block">
           <div class="code-header">
-            <span>pattern13.py</span>
+            <span>pattern9d.py</span>
             <div class="window-dots"><span></span><span></span><span></span></div>
           </div>
           <pre><code><span>import os, torch</span>
@@ -499,9 +500,18 @@
 <span>    def chunk_text(self, text):</span>
 <span>        words = text.split(); chunks, start = [], 0</span>
 <span>        while start < len(words):</span>
-<span>            chunks.append(" ".join(words[start:start + self.chunk_size]))</span>
-<span>            start += (self.chunk_size - self.overlap)</span>
+<span>            end = start + self.chunk_size</span>
+<span>            chunks.append(" ".join(words[start:end]))</span>
+<span>            start = end - self.overlap</span>
+<span>            if start >= len(words): break</span>
 <span>        return chunks</span>
+
+<span>class SimpleEmbeddingModel(nn.Module):</span>
+<span>    def __init__(self, vocab_size, embedding_dim=32):</span>
+<span>        super().__init__()</span>
+<span>        self.embedding = nn.Embedding(vocab_size, embedding_dim)</span>
+<span>    def forward(self, token_ids):</span>
+<span>        return self.embedding(token_ids).mean(dim=0)</span>
 
 <span>class VectorStore:</span>
 <span>    def __init__(self): self.store = []</span>
@@ -514,23 +524,15 @@
 <span>class RAGMemory:</span>
 <span>    def __init__(self):</span>
 <span>        self.chunker = Chunker(); self.vector_store = VectorStore()</span>
-<span>        self.word_to_id = {"&lt;UNK&gt;": 0}</span>
 <span>    def build_index(self, doc):</span>
 <span>        chunks = self.chunker.chunk_text(doc)</span>
-<span>        for c in chunks:</span>
-<span>            for w in c.lower().split():</span>
-<span>                if w not in self.word_to_id: self.word_to_id[w] = len(self.word_to_id)</span>
-<span>        model = nn.Embedding(len(self.word_to_id), 32)</span>
+<span>        # Vocabulary and Model initialization follows...</span>
 <span>        for i, chunk in enumerate(chunks, start=1):</span>
-<span>            ids = torch.tensor([self.word_to_id.get(w, 0) for w in chunk.lower().split()], dtype=torch.long)</span>
-<span>            self.vector_store.add(f"chunk_{i}", chunk, model(ids).mean(dim=0))</span>
+<span>            self.vector_store.add(f"chunk_{i}", chunk, embedding)</span>
 
-<span>class RAGAgent:</span>
-<span>    def __init__(self, name, rag_memory):</span>
-<span>        self.name, self.rag_memory = name, rag_memory</span>
-<span>        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span>
+<span>class RAGAgent(BaseAgent):</span>
 <span>    def think(self, question):</span>
-<span>        context = self.rag_memory.retrieve(question) # Simplified retrieval call</span>
+<span>        context = self.rag_memory.retrieve(question)</span>
 <span>        prompt = f"Answer only from context:\n{context}\n\nQuestion: {question}"</span>
 <span>        res = self.client.models.generate_content(model="gemini-2.5-flash", contents=prompt)</span>
 <span>        return res.text</span></code></pre>
@@ -539,11 +541,11 @@
         <div class="explanation">
           <div class="explanation-header">Mental Model</div>
           <div class="explanation-content">
-            <p><strong>Lines 7-15:</strong> The <code class="inline">Chunker</code> breaks long text into manageable overlapping blocks. Overlap ensures that context at the borders of chunks isn't lost.</p>
-            <p><strong>Lines 17-23:</strong> The <code class="inline">VectorStore</code> uses <strong>Cosine Similarity</strong> to compare vectors. It calculates how "close" the user's question is to every stored chunk in high-dimensional space.</p>
-            <p><strong>Lines 25-38:</strong> <code class="inline">RAGMemory</code> handles the heavy lifting—building a vocabulary, creating embeddings using PyTorch's <code class="inline">nn.Embedding</code>, and indexing the document.</p>
-            <p><strong>Lines 40-48:</strong> The <code class="inline">RAGAgent</code> doesn't answer immediately. It first fetches relevant chunks from memory, then includes them in the prompt as the only allowed source material.</p>
-            <p><strong>Result:</strong> An agent that is "grounded." If the information isn't in the provided document, the agent is instructed to say it doesn't know, preventing confident hallucinations.</p>
+            <p><strong>Lines 7-17:</strong> The <code class="inline">Chunker</code> breaks long text into smaller pieces. The <code class="inline">overlap</code> parameter ensures that context appearing at the end of one chunk isn't lost for the beginning of the next.</p>
+            <p><strong>Lines 19-24:</strong> Our neural <code class="inline">SimpleEmbeddingModel</code>. It uses a PyTorch embedding layer to turn word IDs into vectors, then averages them to create a single mathematical "fingerprint" for the chunk.</p>
+            <p><strong>Lines 26-33:</strong> The <code class="inline">VectorStore</code> uses <strong>Cosine Similarity</strong>. It calculates the mathematical "angle" between your question and every chunk to find the best match.</p>
+            <p><strong>Lines 35-43:</strong> <code class="inline">RAGMemory</code> orchestrates the indexing process: chunking the doc, building a vocabulary, and storing the vectors.</p>
+            <p><strong>Lines 45-51:</strong> The <code class="inline">RAGAgent</code>. It doesn't answer from its own internal knowledge. It retrieves the context first, then uses it to construct a grounded, non-hallucinated response.</p>
           </div>
         </div>
       </div>
@@ -552,8 +554,8 @@
     <section id="next">
       <div class="next-box">
         <div>
-          <h2>Final Step: The Full Autonomous Researcher</h2>
-          <p>Pattern 14 (the actual finale) combines memory, reasoning, and real-time tool use into a high-level researcher agent.</p>
+          <h2>Final Step: The Vector Search Agent</h2>
+          <p>Pattern 14 takes this further with optimized search indexes and refined retrieval logic for even higher accuracy.</p>
         </div>
         <a href="pattern14.html">Open Pattern 14 →</a>
       </div>
@@ -563,5 +565,4 @@
   <footer>Agentic AI Cookbook · Pattern 13</footer>
 
 </body>
-
 </html>
