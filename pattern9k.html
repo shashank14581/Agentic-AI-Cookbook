@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern 9k – Creating Your Own MCP Tool Server</title>
+  <style>
+    /*
+      This page explains how to stand up a simple MCP tool server. A
+      golden gradient suggests the “backend” nature of this pattern.
+      Here we focus solely on server code – no agent is involved.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #fffaf0;
+      color: #744210;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #f6ad55, #ed8936);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #fef7e0;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .code-pane {
+      background: #fffaf0;
+      border: 1px solid #fbd38d;
+      border-radius: 12px;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    .code-pane pre {
+      margin: 0;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+    .explanation-pane {
+      background: #fefcbf;
+      border: 1px solid #faf089;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .explanation-pane h3 {
+      margin-top: 0;
+      color: #975a16;
+    }
+    .explanation-pane p {
+      margin: 0.75rem 0;
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      background: #b7791f;
+      color: #fefcbf;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern 9k – Creating Your Own MCP Tool Server</h1>
+    <p>Build a custom MCP server that exposes tools for agents to call. This pattern focuses on the server side and does not involve Gemini.</p>
+  </header>
+  <div class="container">
+    <div class="code-pane">
+      <pre><code>
+1 !pip&nbsp;install&nbsp;-q&nbsp;"mcp[cli]"&nbsp;uvicorn&nbsp;nest_asyncio
+2 
+3 import&nbsp;time, socket, threading
+4 import&nbsp;nest_asyncio
+5 from&nbsp;mcp.server.fastmcp&nbsp;import&nbsp;FastMCP
+6 
+7 nest_asyncio.apply()
+8 
+9 # Port configuration
+10 PORT&nbsp;=&nbsp;8012
+11 
+12 # Create the FastMCP server
+13 mcp&nbsp;=&nbsp;FastMCP(name="simple_tool_server",stateless_http=True,json_response=True)
+14 
+15 # Define a tool
+16 @mcp.tool()
+17 def&nbsp;search_private_knowledge(query:&nbsp;str)&nbsp;->&nbsp;str:
+18 &nbsp;&nbsp;query&nbsp;=&nbsp;query.lower()
+19 &nbsp;&nbsp;if&nbsp;"blue mango"&nbsp;in&nbsp;query:
+20 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Blue Mango is the internal codename for the customer retention model in Project Sarayu."
+21 &nbsp;&nbsp;if&nbsp;"silver gate"&nbsp;in&nbsp;query:
+22 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Silver Gate is the manual review queue for Project Sarayu."
+23 &nbsp;&nbsp;return&nbsp;"No matching private knowledge found."
+24 
+25 def&nbsp;run_mcp_server():
+26 &nbsp;&nbsp;mcp.settings.port&nbsp;=&nbsp;PORT
+27 &nbsp;&nbsp;mcp.run(transport="streamable-http")
+28 
+29 def&nbsp;port_is_busy(port):
+30 &nbsp;&nbsp;with&nbsp;socket.socket(socket.AF_INET,&nbsp;socket.SOCK_STREAM)&nbsp;as&nbsp;s:
+31 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;s.connect_ex(("127.0.0.1",&nbsp;port))&nbsp;==&nbsp;0
+32 
+33 # Start the server only if the port is free
+34 if&nbsp;not&nbsp;port_is_busy(PORT):
+35 &nbsp;&nbsp;server_thread&nbsp;=&nbsp;threading.Thread(target=run_mcp_server,daemon=True)
+36 &nbsp;&nbsp;server_thread.start()
+37 &nbsp;&nbsp;time.sleep(3)
+38 &nbsp;&nbsp;print(f"MCP server started on port {PORT}.")
+39 else:
+40 &nbsp;&nbsp;print(f"MCP server already running on port {PORT}.")
+      </code></pre>
+    </div>
+    <div class="explanation-pane">
+      <h3>Server Setup</h3>
+      <p>The script begins by importing the necessary modules, applying <code>nest_asyncio</code> and specifying a port (8012). It then creates a <code>FastMCP</code> instance with a human‑readable name. The server is configured for stateless HTTP transport and JSON responses.</p>
+      <h3>Defining Tools</h3>
+      <p>Using the <code>@mcp.tool()</code> decorator, you can expose functions over HTTP. Here, <code>search_private_knowledge</code> checks for keywords in the query and returns a canned answer if it finds “Blue Mango” or “Silver Gate”. Otherwise it returns a default message.</p>
+      <h3>Starting the Server</h3>
+      <p>The helper function <code>port_is_busy()</code> prevents multiple servers from binding to the same port. If the port is available, the server is started on a background thread and left running. You can add more tools by decorating additional functions before launching the server.</p>
+    </div>
+  </div>
+  <footer>
+    <p>Agentic pattern 9k: expose custom tools via a simple FastMCP server.</p>
+  </footer>
+</body>
+</html>
