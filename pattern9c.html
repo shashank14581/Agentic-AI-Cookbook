@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern&nbsp;9c – Knowledge Extraction</title>
+  <style>
+    /*
+      This page explains the entity extraction pattern. An agent reads
+      unstructured documents, extracts structured entities, and writes
+      them to a knowledge store. Use of cool blues and purples gives
+      this page a distinct visual identity.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #f5f3ff;
+      color: #312e81;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #e0e7ff;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.2rem;
+      padding: 2.5rem;
+      max-width: 1400px;
+      margin: auto;
+    }
+    .code-box {
+      background: #ede9fe;
+      border: 1px solid #ddd6fe;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .code-box pre {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+    .code-box .line {
+      display: block;
+    }
+    .code-box .num {
+      display: inline-block;
+      width: 2.6rem;
+      color: #6b21a8;
+      user-select: none;
+    }
+    .explain-box {
+      background: #ede9fe;
+      border: 1px solid #ddd6fe;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .explain-box h2 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      color: #5b21b6;
+    }
+    .explain-box h3 {
+      margin-top: 1.2rem;
+      font-size: 1.25rem;
+      color: #4c1d95;
+    }
+    .explain-box p, .explain-box li {
+      font-size: 0.96rem;
+    }
+    .explain-box ul {
+      margin-top: 0.5rem;
+      padding-left: 1.2rem;
+    }
+    .explain-box li {
+      margin-bottom: 0.4rem;
+    }
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern&nbsp;9c – Knowledge Extraction</h1>
+    <p>
+      In this pattern, an agent turns messy natural language into
+      structured data. It reads each document, extracts entities like
+      people, companies and dates, and stores them in a knowledge store
+      for later analysis.
+    </p>
+  </header>
+  <main class="container">
+    <div class="code-box">
+      <pre>
+<span class="line"><span class="num">1</span><span class="content">import os</span></span>
+<span class="line"><span class="num">2</span><span class="content">import json</span></span>
+<span class="line"><span class="num">3</span><span class="content">from google import genai</span></span>
+<span class="line"><span class="num">4</span><span class="content">from google.genai import types</span></span>
+<span class="line"><span class="num">5</span><span class="content">os.environ["GEMINI_API_KEY"] = "your_api_key"</span></span>
+
+<span class="line"><span class="num">8</span><span class="content">class KnowledgeStore:</span></span>
+<span class="line"><span class="num">9</span><span class="content">    def __init__(self):</span></span>
+<span class="line"><span class="num">10</span><span class="content">        self.entities = []</span></span>
+<span class="line"><span class="num">12</span><span class="content">    def write(self, agent_name, extracted_entities):</span></span>
+<span class="line"><span class="num">13</span><span class="content">        self.entities.append({</span></span>
+<span class="line"><span class="num">14</span><span class="content">            "agent": agent_name,</span></span>
+<span class="line"><span class="num">15</span><span class="content">            "entities": extracted_entities</span></span>
+<span class="line"><span class="num">16</span><span class="content">        })</span></span>
+<span class="line"><span class="num">18</span><span class="content">    def read(self):</span></span>
+<span class="line"><span class="num">19</span><span class="content">        if not self.entities:</span></span>
+<span class="line"><span class="num">20</span><span class="content">            return "No entities extracted yet."</span></span>
+<span class="line"><span class="num">22</span><span class="content">        return json.dumps(self.entities, indent=2)</span></span>
+
+<span class="line"><span class="num">25</span><span class="content">class BaseAgent:</span></span>
+<span class="line"><span class="num">26</span><span class="content">    def __init__(self, name, sys_prompt, knowledge_store, model="gemini-2.5-flash-lite"):</span></span>
+<span class="line"><span class="num">27</span><span class="content">        self.name = name</span></span>
+<span class="line"><span class="num">28</span><span class="content">        self.sys_prompt = sys_prompt</span></span>
+<span class="line"><span class="num">29</span><span class="content">        self.knowledge_store = knowledge_store</span></span>
+<span class="line"><span class="num">30</span><span class="content">        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span></span>
+<span class="line"><span class="num">31</span><span class="content">        self.model = model</span></span>
+
+<span class="line"><span class="num">33</span><span class="content">    def think(self, input_text):</span></span>
+<span class="line"><span class="num">35</span><span class="content">        existing_knowledge = self.knowledge_store.read()</span></span>
+<span class="line"><span class="num">37</span><span class="content">        final_input = f"""</span></span>
+<span class="line"><span class="num">38</span><span class="content">Existing Knowledge Store:</span></span>
+<span class="line"><span class="num">39</span><span class="content">{existing_knowledge}</span></span>
+<span class="line"><span class="num">40</span><span class="content"></span></span>
+<span class="line"><span class="num">41</span><span class="content">Current Text:</span></span>
+<span class="line"><span class="num">42</span><span class="content">{input_text}</span></span>
+<span class="line"><span class="num">44</span><span class="content">Extract useful entities and return only valid JSON.</span></span>
+<span class="line"><span class="num">45</span><span class="content">"""</span></span>
+<span class="line"><span class="num">47</span><span class="content">        contents = [types.Content(role="user", parts=[types.Part.from_text(text=final_input)])]</span></span>
+<span class="line"><span class="num">54</span><span class="content">        config = types.GenerateContentConfig(</span></span>
+<span class="line"><span class="num">55</span><span class="content">            thinking_config=types.ThinkingConfig(thinking_budget=0),</span></span>
+<span class="line"><span class="num">56</span><span class="content">            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span></span>
+<span class="line"><span class="num">57</span><span class="content">        )</span></span>
+<span class="line"><span class="num">59</span><span class="content">        response = ""</span></span>
+<span class="line"><span class="num">61</span><span class="content">        for chunk in self.client.models.generate_content_stream(</span></span>
+<span class="line"><span class="num">62</span><span class="content">            model=self.model, contents=contents, config=config</span></span>
+<span class="line"><span class="num">63</span><span class="content">        ):</span></span>
+<span class="line"><span class="num">66</span><span class="content">            if chunk.text:</span></span>
+<span class="line"><span class="num">67</span><span class="content">                print(chunk.text, end="")</span></span>
+<span class="line"><span class="num">68</span><span class="content">                response += chunk.text</span></span>
+<span class="line"><span class="num">70</span><span class="content">        print()</span></span>
+<span class="line"><span class="num">72</span><span class="content">        try:</span></span>
+<span class="line"><span class="num">73</span><span class="content">            extracted_entities = json.loads(response)</span></span>
+<span class="line"><span class="num">74</span><span class="content">        except json.JSONDecodeError:</span></span>
+<span class="line"><span class="num">75</span><span class="content">            extracted_entities = {"raw_response": response}</span></span>
+<span class="line"><span class="num">79</span><span class="content">        self.knowledge_store.write(self.name, extracted_entities)</span></span>
+<span class="line"><span class="num">81</span><span class="content">        return extracted_entities</span></span>
+
+<span class="line"><span class="num">84</span><span class="content">class EntityExtractionAgent(BaseAgent):</span></span>
+<span class="line"><span class="num">85</span><span class="content">    def __init__(self, name, knowledge_store):</span></span>
+<span class="line"><span class="num">86</span><span class="content">        super().__init__(</span></span>
+<span class="line"><span class="num">87</span><span class="content">            name,</span></span>
+<span class="line"><span class="num">88</span><span class="content">            """
+You are an Entity Extraction Agent.
+
+Your job is to extract structured entities from raw text.
+
+Extract:
+- people
+- companies
+- locations
+- products
+- issues
+- actions
+- dates
+- relationships
+
+Return only valid JSON.
+Do not explain.
+""",
+<span class="line"><span class="num">106</span><span class="content">            knowledge_store</span></span>
+<span class="line"><span class="num">107</span><span class="content">        )</span></span>
+
+<span class="line"><span class="num">110</span><span class="content">def orchestrate(agent, documents):</span></span>
+<span class="line"><span class="num">111</span><span class="content">    for i, document in enumerate(documents, start=1):</span></span>
+<span class="line"><span class="num">112</span><span class="content">        print(f"\n\nDocument {i}")</span></span>
+<span class="line"><span class="num">113</span><span class="content">        print("-" * 50)</span></span>
+<span class="line"><span class="num">115</span><span class="content">        agent.think(document)</span></span>
+<span class="line"><span class="num">117</span><span class="content">    print("\n\nFinal Knowledge Store")</span></span>
+<span class="line"><span class="num">118</span><span class="content">    print("=" * 50)</span></span>
+<span class="line"><span class="num">119</span><span class="content">    print(agent.knowledge_store.read())</span></span>
+
+<span class="line"><span class="num">122</span><span class="content">if __name__ == "__main__":</span></span>
+<span class="line"><span class="num">123</span><span class="content">    knowledge_store = KnowledgeStore()</span></span>
+<span class="line"><span class="num">125</span><span class="content">    extractor = EntityExtractionAgent("EntityBuilder", knowledge_store)</span></span>
+<span class="line"><span class="num">130</span><span class="content">    documents = [</span></span>
+<span class="line"><span class="num">131</span><span class="content">        "Customer Shashank bought a drill from Home Depot in Bengaluru and complained about delayed delivery.",</span></span>
+<span class="line"><span class="num">132</span><span class="content">        "Bruno visited the Koramangala store and purchased paint. The billing team helped him resolve a refund issue.",</span></span>
+<span class="line"><span class="num">133</span><span class="content">        "Aniket reported that the loyalty campaign for Pro customers had low engagement in March 2026."
+    ]</span></span>
+<span class="line"><span class="num">136</span><span class="content">    orchestrate(extractor, documents)</span></span>
+      </pre>
+    </div>
+    <div class="explain-box">
+      <h2>Extracting Structured Knowledge</h2>
+      <p>
+        The goal of this pattern is to turn unstructured text into
+        structured data that can be queried later. A knowledge store is
+        used to persist entity extractions, and a specialised agent
+        handles the extraction task.
+      </p>
+      <h3>KnowledgeStore</h3>
+      <p>
+        The <code>KnowledgeStore</code> class (lines&nbsp;8‑22) is a simple
+        container that accumulates extracted entities. The
+        <code>write()</code> method appends a record containing the
+        agent’s name and the entities it extracted. The
+        <code>read()</code> method returns a human‑readable JSON string of
+        all records or a placeholder if none exist.
+      </p>
+      <h3>BaseAgent</h3>
+      <p>
+        The <code>BaseAgent</code> (lines&nbsp;25‑81) orchestrates the
+        extraction workflow. In <code>think()</code>, it reads the
+        existing knowledge store to provide context (line&nbsp;35) and
+        constructs a <em>final_input</em> string (lines&nbsp;37‑45) that
+        includes existing knowledge and the current text. The prompt
+        instructs the model to extract useful entities and to return only
+        valid JSON.
+      </p>
+      <p>
+        The prompt is sent to Gemini (lines&nbsp;61‑68), and the response
+        text is collected. The code then attempts to parse the response
+        into JSON (lines&nbsp;72‑75); if parsing fails, it stores the raw
+        response. In either case, the extracted (or raw) data is saved to
+        the knowledge store via <code>write()</code> (line&nbsp;79).
+      </p>
+      <h3>EntityExtractionAgent</h3>
+      <p>
+        This subclass (lines&nbsp;84‑107) defines a system prompt that
+        instructs Gemini to extract specific entity types, including
+        people, companies, locations, products, issues, actions, dates
+        and relationships. The prompt emphasises that only valid JSON
+        should be returned, and it forbids explanations.
+      </p>
+      <h3>Orchestration</h3>
+      <p>
+        The <code>orchestrate()</code> function (lines&nbsp;110‑119) loops
+        over a list of documents. For each document, it prints a
+        separator, invokes <code>agent.think()</code>, and moves on. After
+        processing all documents, it prints the final contents of the
+        knowledge store. In the main block, a list of example customer
+        interactions is passed into this function to demonstrate how
+        information from multiple sources accumulates.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
