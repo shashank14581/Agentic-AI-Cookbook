@@ -1,144 +1,582 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agentic Pattern 9k – Creating Your Own MCP Tool Server</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pattern 20 — MCP Server</title>
+
   <style>
-    /*
-      This page explains how to stand up a simple MCP tool server. A
-      golden gradient suggests the “backend” nature of this pattern.
-      Here we focus solely on server code – no agent is involved.
-    */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      margin: 0;
-      font-family: "Inter", sans-serif;
-      background: #fffaf0;
-      color: #744210;
-      line-height: 1.6;
+      font-family: Inter, Arial, sans-serif;
+      background: #fff8ef;
+      color: #182230;
+      overflow-x: hidden;
+      line-height: 1.7;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 217, 102, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(101, 222, 214, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(255, 107, 53, 0.25), transparent 25%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(24, 34, 48, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 34, 48, 0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      z-index: -1;
+    }
+
     header {
-      background: linear-gradient(135deg, #f6ad55, #ed8936);
-      color: white;
-      padding: 2rem 1rem;
-      text-align: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2.4rem;
-    }
-    header p {
-      margin-top: 0.5rem;
-      font-size: 1.05rem;
-      max-width: 760px;
-      margin-left: auto;
-      margin-right: auto;
-      color: #fef7e0;
-    }
-    .container {
+      padding: 70px 8%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      padding: 2.5rem;
-      max-width: 1200px;
-      margin: auto;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
     }
-    .code-pane {
-      background: #fffaf0;
-      border: 1px solid #fbd38d;
-      border-radius: 12px;
-      padding: 1.5rem;
+
+    .hero-left h1 {
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      margin-bottom: 24px;
+      font-weight: 1000;
+    }
+
+    .hero-left h1 span {
+      color: #ff6b35;
+      text-shadow: 5px 5px 0 #182230;
+      -webkit-text-stroke: 2px #182230;
+    }
+
+    .hero-left p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #ffd966;
+      color: #182230;
+      border: 2px solid #182230;
+      box-shadow: 5px 5px 0 #182230;
+      margin-bottom: 24px;
+      font-weight: 1000;
+      font-size: 0.88rem;
+    }
+
+    .pill span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff6b35;
+      border: 2px solid #182230;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 38px;
+      border: 3px solid #182230;
+      box-shadow: 12px 12px 0 #182230;
+      padding: 28px;
+      transform: rotate(2deg);
+    }
+
+    .hero-face {
+      height: 210px;
+      border-radius: 30px;
+      border: 3px solid #182230;
+      background:
+        linear-gradient(135deg, transparent 0 42%, #182230 42% 45%, transparent 45%),
+        radial-gradient(circle at 35% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #182230 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 68%, #ff6b35 0 36px, transparent 37px),
+        #ffd966;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .hero-face::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      border: 6px solid #182230;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-card p {
+      color: #475467;
+      font-weight: 700;
+    }
+
+    .json-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .json-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 1000;
+      color: #182230;
+    }
+
+    .json-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+      background: #ff6b35;
+      flex: 0 0 auto;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 8%;
+      border-top: 2px solid #182230;
+      border-bottom: 2px solid #182230;
+      display: flex;
+      gap: 14px;
       overflow-x: auto;
+      white-space: nowrap;
     }
-    .code-pane pre {
-      margin: 0;
-      font-family: "Fira Code", monospace;
+
+    nav a {
+      text-decoration: none;
+      color: #182230;
+      background: white;
+      border: 2px solid #182230;
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
       font-size: 0.9rem;
+    }
+
+    nav a:hover {
+      background: #ffd966;
+    }
+
+    main {
+      max-width: 1360px;
+      margin: auto;
+      padding: 70px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .section-title span {
+      background: #ff6b35;
+      color: #182230;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #182230;
+      box-shadow: 4px 4px 0 #182230;
+      font-weight: 1000;
+      font-size: 0.84rem;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 1000;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      padding: 30px;
+    }
+
+    .summary p {
+      color: #475467;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .code-block {
+      border-radius: 36px;
+      overflow: hidden;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      background: #182230;
+    }
+
+    .code-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 1000;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #182230;
+    }
+
+    .window-dots span:nth-child(1) { background: #ff6b35; }
+    .window-dots span:nth-child(2) { background: #ffd966; }
+    .window-dots span:nth-child(3) { background: #65ded6; }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 22px;
+      overflow-x: auto;
+      background: #182230;
+      max-height: 760px;
+    }
+
+    .code-block code {
+      display: block;
+      font-family: "Courier New", monospace;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: #fff8ef;
+      counter-reset: line;
+      font-weight: 700;
+    }
+
+    .code-block code span {
+      display: block;
       white-space: pre;
     }
-    .explanation-pane {
-      background: #fefcbf;
-      border: 1px solid #faf089;
-      border-radius: 12px;
-      padding: 1.5rem;
+
+    .code-block code span::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 34px;
+      margin-right: 14px;
+      color: #ffd966;
+      opacity: 0.95;
+      user-select: none;
     }
-    .explanation-pane h3 {
-      margin-top: 0;
-      color: #975a16;
+
+    .explanation {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #182230;
+      overflow: hidden;
+      position: sticky;
+      top: 92px;
     }
-    .explanation-pane p {
-      margin: 0.75rem 0;
+
+    .explanation-header {
+      background: #ffd966;
+      color: #182230;
+      padding: 16px 20px;
+      border-bottom: 3px solid #182230;
+      font-weight: 1000;
     }
+
+    .explanation-content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .explanation-content p {
+      background: #fff8ef;
+      border: 2px solid #182230;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 5px 5px 0 #182230;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .explanation-content strong {
+      color: #ff6b35;
+    }
+
+    code.inline {
+      background: #ffd966;
+      color: #182230;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #182230;
+      font-weight: 1000;
+    }
+
+    .next-box {
+      background: #182230;
+      color: white;
+      border-radius: 36px;
+      border: 3px solid #182230;
+      box-shadow: 10px 10px 0 #ff6b35;
+      padding: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .next-box h2 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 2.5rem;
+    }
+
+    .next-box p {
+      color: #f2f4f7;
+      max-width: 760px;
+      font-weight: 700;
+    }
+
+    .next-box a {
+      text-decoration: none;
+      background: #ffd966;
+      color: #182230;
+      border-radius: 999px;
+      border: 2px solid white;
+      box-shadow: 5px 5px 0 white;
+      padding: 12px 18px;
+      font-weight: 1000;
+    }
+
     footer {
       text-align: center;
-      padding: 1.5rem;
-      background: #b7791f;
-      color: #fefcbf;
+      padding: 42px 20px;
+      background: #182230;
+      color: white;
+      font-weight: 1000;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 980px) {
+      header { grid-template-columns: 1fr; }
+      .code-layout { grid-template-columns: 1fr; }
+      .explanation { position: static; }
     }
   </style>
 </head>
+
 <body>
+
   <header>
-    <h1>Pattern 9k – Creating Your Own MCP Tool Server</h1>
-    <p>Build a custom MCP server that exposes tools for agents to call. This pattern focuses on the server side and does not involve Gemini.</p>
+    <div class="hero-left">
+      <div class="pill">
+        <span></span>
+        Pattern 20 · MCP Server
+      </div>
+      <h1>MCP <span>Server</span></h1>
+      <p>
+        This pattern isolates the server side of MCP. It defines a reusable tool server, exposes a private knowledge search tool, starts the server over streamable HTTP, and avoids port conflicts when rerunning notebook cells.
+      </p>
+    </div>
+
+    <div class="hero-card">
+      <div class="hero-face"></div>
+      <h2>Expose tools over HTTP.</h2>
+      <p>A minimal MCP server that other agents or clients can connect to and call.</p>
+      <div class="json-stack">
+        <div class="json-row"><span class="json-dot"></span> Define FastMCP Server</div>
+        <div class="json-row"><span class="json-dot"></span> Register Tool</div>
+        <div class="json-row"><span class="json-dot"></span> Run Streamable HTTP</div>
+      </div>
+    </div>
   </header>
-  <div class="container">
-    <div class="code-pane">
-      <pre><code>
-1 !pip&nbsp;install&nbsp;-q&nbsp;"mcp[cli]"&nbsp;uvicorn&nbsp;nest_asyncio
-2 
-3 import&nbsp;time, socket, threading
-4 import&nbsp;nest_asyncio
-5 from&nbsp;mcp.server.fastmcp&nbsp;import&nbsp;FastMCP
-6 
-7 nest_asyncio.apply()
-8 
-9 # Port configuration
-10 PORT&nbsp;=&nbsp;8012
-11 
-12 # Create the FastMCP server
-13 mcp&nbsp;=&nbsp;FastMCP(name="simple_tool_server",stateless_http=True,json_response=True)
-14 
-15 # Define a tool
-16 @mcp.tool()
-17 def&nbsp;search_private_knowledge(query:&nbsp;str)&nbsp;->&nbsp;str:
-18 &nbsp;&nbsp;query&nbsp;=&nbsp;query.lower()
-19 &nbsp;&nbsp;if&nbsp;"blue mango"&nbsp;in&nbsp;query:
-20 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Blue Mango is the internal codename for the customer retention model in Project Sarayu."
-21 &nbsp;&nbsp;if&nbsp;"silver gate"&nbsp;in&nbsp;query:
-22 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;"Silver Gate is the manual review queue for Project Sarayu."
-23 &nbsp;&nbsp;return&nbsp;"No matching private knowledge found."
-24 
-25 def&nbsp;run_mcp_server():
-26 &nbsp;&nbsp;mcp.settings.port&nbsp;=&nbsp;PORT
-27 &nbsp;&nbsp;mcp.run(transport="streamable-http")
-28 
-29 def&nbsp;port_is_busy(port):
-30 &nbsp;&nbsp;with&nbsp;socket.socket(socket.AF_INET,&nbsp;socket.SOCK_STREAM)&nbsp;as&nbsp;s:
-31 &nbsp;&nbsp;&nbsp;&nbsp;return&nbsp;s.connect_ex(("127.0.0.1",&nbsp;port))&nbsp;==&nbsp;0
-32 
-33 # Start the server only if the port is free
-34 if&nbsp;not&nbsp;port_is_busy(PORT):
-35 &nbsp;&nbsp;server_thread&nbsp;=&nbsp;threading.Thread(target=run_mcp_server,daemon=True)
-36 &nbsp;&nbsp;server_thread.start()
-37 &nbsp;&nbsp;time.sleep(3)
-38 &nbsp;&nbsp;print(f"MCP server started on port {PORT}.")
-39 else:
-40 &nbsp;&nbsp;print(f"MCP server already running on port {PORT}.")
-      </code></pre>
-    </div>
-    <div class="explanation-pane">
-      <h3>Server Setup</h3>
-      <p>The script begins by importing the necessary modules, applying <code>nest_asyncio</code> and specifying a port (8012). It then creates a <code>FastMCP</code> instance with a human‑readable name. The server is configured for stateless HTTP transport and JSON responses.</p>
-      <h3>Defining Tools</h3>
-      <p>Using the <code>@mcp.tool()</code> decorator, you can expose functions over HTTP. Here, <code>search_private_knowledge</code> checks for keywords in the query and returns a canned answer if it finds “Blue Mango” or “Silver Gate”. Otherwise it returns a default message.</p>
-      <h3>Starting the Server</h3>
-      <p>The helper function <code>port_is_busy()</code> prevents multiple servers from binding to the same port. If the port is available, the server is started on a background thread and left running. You can add more tools by decorating additional functions before launching the server.</p>
-    </div>
-  </div>
-  <footer>
-    <p>Agentic pattern 9k: expose custom tools via a simple FastMCP server.</p>
-  </footer>
+
+  <nav>
+    <a href="#summary">Summary</a>
+    <a href="#walkthrough">Code Walkthrough</a>
+    <a href="#next">Next Pattern</a>
+  </nav>
+
+  <main>
+    <section id="summary">
+      <div class="section-title">
+        <span>OVERVIEW</span>
+        <h2>What this pattern teaches</h2>
+      </div>
+      <div class="summary">
+        <p>
+          <strong>Pattern 20</strong> is the server-side counterpart to Pattern 19. Pattern 19 showed how a client calls an existing MCP endpoint. This pattern shows how that endpoint is created in the first place using <code class="inline">FastMCP</code>.
+        </p>
+        <p>
+          The core sequence is: <strong>install MCP → define server → register tool → choose port → start streamable HTTP server → reuse if already running</strong>. This is the minimum reusable tool-server pattern for agentic systems.
+        </p>
+      </div>
+    </section>
+
+    <section id="walkthrough">
+      <div class="section-title">
+        <span>CODE</span>
+        <h2>Line-by-line walkthrough</h2>
+      </div>
+
+      <div class="code-layout">
+        <div class="code-block">
+          <div class="code-header">
+            <span>pattern20_mcp_server.ipynb_cell.py</span>
+            <div class="window-dots"><span></span><span></span><span></span></div>
+          </div>
+          <pre><code><span>!pip install -q "mcp[cli]" uvicorn nest_asyncio</span>
+<span></span>
+<span>import time</span>
+<span>import socket</span>
+<span>import threading</span>
+<span>import nest_asyncio</span>
+<span></span>
+<span>from mcp.server.fastmcp import FastMCP</span>
+<span></span>
+<span>nest_asyncio.apply()</span>
+<span></span>
+<span></span>
+<span>PORT = 8012</span>
+<span></span>
+<span>mcp = FastMCP(</span>
+<span>    name="simple_tool_server",</span>
+<span>    stateless_http=True,</span>
+<span>    json_response=True</span>
+<span>)</span>
+<span></span>
+<span></span>
+<span>@mcp.tool()</span>
+<span>def search_private_knowledge(query: str) -&gt; str:</span>
+<span>    query = query.lower()</span>
+<span></span>
+<span>    if "blue mango" in query:</span>
+<span>        return "Blue Mango is the internal codename for the customer retention model in Project Sarayu."</span>
+<span></span>
+<span>    if "silver gate" in query:</span>
+<span>        return "Silver Gate is the manual review queue for Project Sarayu."</span>
+<span></span>
+<span>    return "No matching private knowledge found."</span>
+<span></span>
+<span></span>
+<span>def run_mcp_server():</span>
+<span>    mcp.settings.port = PORT</span>
+<span>    mcp.run(transport="streamable-http")</span>
+<span></span>
+<span></span>
+<span>def port_is_busy(port):</span>
+<span>    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:</span>
+<span>        return s.connect_ex(("127.0.0.1", port)) == 0</span>
+<span></span>
+<span></span>
+<span>if not port_is_busy(PORT):</span>
+<span>    server_thread = threading.Thread(</span>
+<span>        target=run_mcp_server,</span>
+<span>        daemon=True</span>
+<span>    )</span>
+<span>    server_thread.start()</span>
+<span>    time.sleep(3)</span>
+<span>    print(f"MCP server started on port {PORT}.")</span>
+<span>else:</span>
+<span>    print(f"MCP server already running on port {PORT}.")</span></code></pre>
+        </div>
+
+        <div class="explanation">
+          <div class="explanation-header">Mental Model</div>
+          <div class="explanation-content">
+            <p><strong>Line 1:</strong> Installs MCP, Uvicorn, and <code class="inline">nest_asyncio</code>. This keeps the script notebook-friendly.</p>
+            <p><strong>Lines 3-10:</strong> Imports utilities for sleeping, checking ports, running the server in a background thread, and patching the notebook event loop.</p>
+            <p><strong>Line 13:</strong> Chooses port <code class="inline">8012</code>. Clients will connect to this server through <code class="inline">http://127.0.0.1:8012/mcp</code>.</p>
+            <p><strong>Lines 15-19:</strong> Creates a <code class="inline">FastMCP</code> server named <code class="inline">simple_tool_server</code>. Stateless HTTP and JSON response mode make it easier to call from clients.</p>
+            <p><strong>Lines 22-32:</strong> Registers <code class="inline">search_private_knowledge</code> as an MCP tool. The decorator makes the function available to MCP clients.</p>
+            <p><strong>Lines 35-37:</strong> Defines how to run the server. The transport is <code class="inline">streamable-http</code>, which matches the client pattern from Pattern 19.</p>
+            <p><strong>Lines 40-42:</strong> Checks whether the port is already occupied. This prevents duplicate-server crashes when rerunning cells.</p>
+            <p><strong>Lines 45-55:</strong> Starts the MCP server in a daemon thread if the port is free. If the server already exists, the script reuses it.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="next">
+      <div class="next-box">
+        <div>
+          <h2>Next Step: Agent + MCP Integration</h2>
+          <p>Pattern 21 can connect this reusable server to a Gemini-powered agent, letting the model select and call MCP tools during reasoning.</p>
+        </div>
+        <a href="pattern21.html">Open Pattern 21 →</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>Agentic AI Cookbook · Pattern 20</footer>
+
 </body>
 </html>
