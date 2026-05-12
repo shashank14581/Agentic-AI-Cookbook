@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Pattern&nbsp;9e – Vector Search Before Generation</title>
+  <style>
+    /*
+      This page explains how to perform a vector search prior to text
+      generation. Unlike the chunking example, this pattern indexes
+      whole documents and retrieves them by similarity before the
+      agent answers. A warm pink gradient reinforces the distinction.
+    */
+    body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background: #fff1f2;
+      color: #881337;
+      line-height: 1.6;
+    }
+    header {
+      background: linear-gradient(135deg, #fb7185, #f472b6);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+    }
+    header p {
+      margin-top: 0.5rem;
+      font-size: 1.05rem;
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+      color: #ffe4e6;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2.5rem;
+      max-width: 1400px;
+      margin: auto;
+    }
+    .code-pane {
+      background: #ffeef3;
+      border: 1px solid #fecdd3;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    .code-pane pre {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: "Fira Code", monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+    .code-pane .line {
+      display: block;
+    }
+    .code-pane .num {
+      display: inline-block;
+      width: 2.6rem;
+      color: #be123c;
+      user-select: none;
+    }
+    .explain-pane {
+      background: #ffeef3;
+      border: 1px solid #fecdd3;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .explain-pane h2 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      color: #be123c;
+    }
+    .explain-pane h3 {
+      margin-top: 1.2rem;
+      font-size: 1.25rem;
+      color: #9f1239;
+    }
+    .explain-pane p, .explain-pane li {
+      font-size: 0.96rem;
+    }
+    .explain-pane ul {
+      margin-top: 0.5rem;
+      padding-left: 1.2rem;
+    }
+    .explain-pane li {
+      margin-bottom: 0.4rem;
+    }
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pattern&nbsp;9e – Vector Search Before Generation</h1>
+    <p>
+      Instead of chunking documents, this pattern embeds entire
+      sentences or facts and retrieves the most similar ones before
+      answering. The agent then answers strictly from the retrieved
+      documents.
+    </p>
+  </header>
+  <main class="container">
+    <div class="code-pane">
+      <pre>
+<span class="line"><span class="num">1</span><span class="content">import os</span></span>
+<span class="line"><span class="num">2</span><span class="content">import torch</span></span>
+<span class="line"><span class="num">3</span><span class="content">import torch.nn as nn</span></span>
+<span class="line"><span class="num">4</span><span class="content">import torch.nn.functional as F</span></span>
+<span class="line"><span class="num">5</span><span class="content">from google import genai</span></span>
+<span class="line"><span class="num">6</span><span class="content">from google.genai import types</span></span>
+<span class="line"><span class="num">7</span><span class="content">os.environ["GEMINI_API_KEY"] = "your_api_key"</span></span>
+
+<span class="line"><span class="num">10</span><span class="content">class SimpleEmbeddingModel(nn.Module):</span></span>
+<span class="line"><span class="num">11</span><span class="content">    def __init__(self, vocab_size, embedding_dim=32):</span></span>
+<span class="line"><span class="num">12</span><span class="content">        super().__init__()</span></span>
+<span class="line"><span class="num">13</span><span class="content">        self.embedding = nn.Embedding(vocab_size, embedding_dim)</span></span>
+<span class="line"><span class="num">15</span><span class="content">    def forward(self, token_ids):</span></span>
+<span class="line"><span class="num">16</span><span class="content">        word_embeddings = self.embedding(token_ids)</span></span>
+<span class="line"><span class="num">17</span><span class="content">        return word_embeddings.mean(dim=0)</span></span>
+
+<span class="line"><span class="num">20</span><span class="content">class VectorSearchIndex:</span></span>
+<span class="line"><span class="num">21</span><span class="content">    def __init__(self):</span></span>
+<span class="line"><span class="num">22</span><span class="content">        self.documents = []</span></span>
+<span class="line"><span class="num">24</span><span class="content">    def add(self, doc_id, text, embedding):</span></span>
+<span class="line"><span class="num">25</span><span class="content">        self.documents.append({"doc_id": doc_id, "text": text, "embedding": embedding})</span></span>
+<span class="line"><span class="num">31</span><span class="content">    def search(self, query_embedding, top_k=3):</span></span>
+<span class="line"><span class="num">32</span><span class="content">        results = []</span></span>
+<span class="line"><span class="num">34</span><span class="content">        for doc in self.documents:</span></span>
+<span class="line"><span class="num">35</span><span class="content">            similarity = F.cosine_similarity(query_embedding.unsqueeze(0), doc["embedding"].unsqueeze(0)).item()</span></span>
+<span class="line"><span class="num">40</span><span class="content">            results.append((similarity, doc))</span></span>
+<span class="line"><span class="num">42</span><span class="content">        results = sorted(results, key=lambda x: x[0], reverse=True)</span></span>
+<span class="line"><span class="num">43</span><span class="content">        return results[:top_k]</span></span>
+
+<span class="line"><span class="num">46</span><span class="content">class VectorSearchMemory:</span></span>
+<span class="line"><span class="num">47</span><span class="content">    def __init__(self, embedding_dim=32):</span></span>
+<span class="line"><span class="num">48</span><span class="content">        self.word_to_id = {"<UNK>": 0}</span></span>
+<span class="line"><span class="num">49</span><span class="content">        self.embedding_dim = embedding_dim</span></span>
+<span class="line"><span class="num">50</span><span class="content">        self.model = None</span></span>
+<span class="line"><span class="num">51</span><span class="content">        self.index = VectorSearchIndex()</span></span>
+<span class="line"><span class="num">53</span><span class="content">    def build_vocab(self, texts):</span></span>
+<span class="line"><span class="num">54</span><span class="content">        for text in texts:</span></span>
+<span class="line"><span class="num">55</span><span class="content">            for word in text.lower().split():</span></span>
+<span class="line"><span class="num">56</span><span class="content">                if word not in self.word_to_id:</span></span>
+<span class="line"><span class="num">57</span><span class="content">                    self.word_to_id[word] = len(self.word_to_id)</span></span>
+<span class="line"><span class="num">59</span><span class="content">    def encode_text(self, text):</span></span>
+<span class="line"><span class="num">60</span><span class="content">        token_ids = [self.word_to_id.get(word, 0) for word in text.lower().split()]</span></span>
+<span class="line"><span class="num">65</span><span class="content">        return torch.tensor(token_ids, dtype=torch.long)</span></span>
+<span class="line"><span class="num">67</span><span class="content">    def build_index(self, texts):</span></span>
+<span class="line"><span class="num">68</span><span class="content">        self.build_vocab(texts)</span></span>
+<span class="line"><span class="num">70</span><span class="content">        self.model = SimpleEmbeddingModel(vocab_size=len(self.word_to_id), embedding_dim=self.embedding_dim)</span></span>
+<span class="line"><span class="num">75</span><span class="content">        for i, text in enumerate(texts, start=1):</span></span>
+<span class="line"><span class="num">76</span><span class="content">            token_ids = self.encode_text(text)</span></span>
+<span class="line"><span class="num">78</span><span class="content">            with torch.no_grad():</span></span>
+<span class="line"><span class="num">79</span><span class="content">                embedding = self.model(token_ids)</span></span>
+<span class="line"><span class="num">81</span><span class="content">            self.index.add(doc_id=f"doc_{i}", text=text, embedding=embedding)</span></span>
+<span class="line"><span class="num">87</span><span class="content">            print(f"Indexed doc_{i}")</span></span>
+<span class="line"><span class="num">89</span><span class="content">    def retrieve(self, query, top_k=3):</span></span>
+<span class="line"><span class="num">90</span><span class="content">        token_ids = self.encode_text(query)</span></span>
+<span class="line"><span class="num">92</span><span class="content">        with torch.no_grad():</span></span>
+<span class="line"><span class="num">93</span><span class="content">            query_embedding = self.model(token_ids)</span></span>
+<span class="line"><span class="num">95</span><span class="content">        results = self.index.search(query_embedding, top_k=top_k)</span></span>
+<span class="line"><span class="num">97</span><span class="content">        context = ""</span></span>
+<span class="line"><span class="num">99</span><span class="content">        for score, doc in results:</span></span>
+<span class="line"><span class="num">100</span><span class="content">            context += f"""</span></span>
+<span class="line"><span class="num">101</span><span class="content">Document: {doc["doc_id"]}</span></span>
+<span class="line"><span class="num">102</span><span class="content">Similarity: {round(score, 4)}</span></span>
+<span class="line"><span class="num">103</span><span class="content">Text: {doc["text"]}</span></span>
+<span class="line"><span class="num">104</span><span class="content">"""</span></span>
+<span class="line"><span class="num">106</span><span class="content">        return context</span></span>
+
+<span class="line"><span class="num">109</span><span class="content">class BaseAgent:</span></span>
+<span class="line"><span class="num">110</span><span class="content">    def __init__(self, name, sys_prompt, vector_memory, model="gemini-flash-latest"):</span></span>
+<span class="line"><span class="num">111</span><span class="content">        self.name = name</span></span>
+<span class="line"><span class="num">112</span><span class="content">        self.sys_prompt = sys_prompt</span></span>
+<span class="line"><span class="num">113</span><span class="content">        self.vector_memory = vector_memory</span></span>
+<span class="line"><span class="num">114</span><span class="content">        self.client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))</span></span>
+<span class="line"><span class="num">115</span><span class="content">        self.model = model</span></span>
+<span class="line"><span class="num">116</span><span class="content">        self.memory = []</span></span>
+
+<span class="line"><span class="num">118</span><span class="content">    def think(self, question):</span></span>
+<span class="line"><span class="num">120</span><span class="content">        retrieved_context = self.vector_memory.retrieve(query=question, top_k=3)</span></span>
+<span class="line"><span class="num">125</span><span class="content">        final_input = f"""</span></span>
+<span class="line"><span class="num">126</span><span class="content">You are using Vector Search before generation.</span></span>
+<span class="line"><span class="num">128</span><span class="content">Step 1: Retrieve relevant documents.</span></span>
+<span class="line"><span class="num">129</span><span class="content">Step 2: Use only retrieved documents to answer.</span></span>
+<span class="line"><span class="num">131</span><span class="content">Retrieved Documents:</span></span>
+<span class="line"><span class="num">132</span><span class="content">{retrieved_context}</span></span>
+<span class="line"><span class="num">134</span><span class="content">Question:</span></span>
+<span class="line"><span class="num">135</span><span class="content">{question}</span></span>
+<span class="line"><span class="num">137</span><span class="content">Answer only from the retrieved documents.</span></span>
+<span class="line"><span class="num">138</span><span class="content">If the retrieved documents do not contain the answer, say:</span></span>
+<span class="line"><span class="num">139</span><span class="content">"I do not have enough retrieved context to answer."</span></span>
+<span class="line"><span class="num">140</span><span class="content">"""</span></span>
+<span class="line"><span class="num">142</span><span class="content">        contents = [types.Content(role="user", parts=[types.Part.from_text(text=final_input)])]</span></span>
+<span class="line"><span class="num">149</span><span class="content">        config = types.GenerateContentConfig(</span></span>
+<span class="line"><span class="num">150</span><span class="content">            thinking_config=types.ThinkingConfig(thinking_budget=0),</span></span>
+<span class="line"><span class="num">151</span><span class="content">            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span></span>
+<span class="line"><span class="num">152</span><span class="content">        )</span></span>
+<span class="line"><span class="num">154</span><span class="content">        response = ""</span></span>
+<span class="line"><span class="num">156</span><span class="content">        for chunk in self.client.models.generate_content_stream(model=self.model, contents=contents, config=config):</span></span>
+<span class="line"><span class="num">161</span><span class="content">            if chunk.text:</span></span>
+<span class="line"><span class="num">162</span><span class="content">                print(chunk.text, end="")</span></span>
+<span class="line"><span class="num">163</span><span class="content">                response += chunk.text</span></span>
+<span class="line"><span class="num">165</span><span class="content">        print()</span></span>
+<span class="line"><span class="num">166</span><span class="content">        self.memory.append((question, response))</span></span>
+<span class="line"><span class="num">167</span><span class="content">        return response</span></span>
+
+<span class="line"><span class="num">170</span><span class="content">class VectorSearchAgent(BaseAgent):</span></span>
+<span class="line"><span class="num">171</span><span class="content">    def __init__(self, name, vector_memory):</span></span>
+<span class="line"><span class="num">172</span><span class="content">        super().__init__(</span></span>
+<span class="line"><span class="num">173</span><span class="content">            name,</span></span>
+<span class="line"><span class="num">174</span><span class="content">            """
+You are a Vector Search RAG Agent.
+
+You always retrieve before generating.
+You answer only from retrieved context.
+You do not guess.
+""",
+<span class="line"><span class="num">181</span><span class="content">            vector_memory</span></span>
+<span class="line"><span class="num">182</span><span class="content">        )</span></span>
+
+<span class="line"><span class="num">185</span><span class="content">def orchestrate(agent, questions):</span></span>
+<span class="line"><span class="num">186</span><span class="content">    for question in questions:</span></span>
+<span class="line"><span class="num">187</span><span class="content">        print(f"\nUser: {question}")</span></span>
+<span class="line"><span class="num">188</span><span class="content">        print(f"{agent.name}: ", end="")</span></span>
+<span class="line"><span class="num">189</span><span class="content">        agent.think(question)</span></span>
+
+<span class="line"><span class="num">192</span><span class="content">if __name__ == "__main__":</span></span>
+<span class="line"><span class="num">194</span><span class="content">    knowledge_base = [</span></span>
+<span class="line"><span class="num">195</span><span class="content">    "Project Sarayu uses Blue Mango as its internal codename for the customer retention model.",</span></span>
+<span class="line"><span class="num">196</span><span class="content">    "In Project Sarayu, the Blue Mango model is refreshed every Thursday at 2 AM IST.",</span></span>
+<span class="line"><span class="num">197</span><span class="content">    "The fallback owner for Blue Mango failures is Aniket from the DS Ops team.",</span></span>
+<span class="line"><span class="num">198</span><span class="content">    "Blue Mango uses three private signals: Lantern Score, River Index, and Basket Drift.",</span></span>
+<span class="line"><span class="num">199</span><span class="content">    "The River Index measures how sharply a customer's category interest changes over seven days.",</span></span>
+<span class="line"><span class="num">200</span><span class="content">    "Basket Drift is triggered when a customer's purchase pattern shifts away from their usual class cluster.",</span></span>
+<span class="line"><span class="num">201</span><span class="content">    "Lantern Score is used to identify customers who are likely to re-engage after a silent period.",</span></span>
+<span class="line"><span class="num">202</span><span class="content">    "Project Sarayu sends its final audience output to the table analytics_private.sarayu.final_audience.",</span></span>
+<span class="line"><span class="num">203</span><span class="content">    "If Blue Mango confidence drops below 0.62, the system must route the audience to manual review.",</span></span>
+<span class="line"><span class="num">204</span><span class="content">    "The manual review queue for Project Sarayu is called the Silver Gate queue.",</span></span>
+<span class="line"><span class="num">205</span><span class="content">    "Project Sarayu is headed by Miss Moses."
+    ]</span></span>
+<span class="line"><span class="num">208</span><span class="content">    vector_memory = VectorSearchMemory(embedding_dim=32)</span></span>
+<span class="line"><span class="num">209</span><span class="content">    vector_memory.build_index(knowledge_base)</span></span>
+<span class="line"><span class="num">211</span><span class="content">    agent = VectorSearchAgent("VectorSearchAgent", vector_memory)</span></span>
+<span class="line"><span class="num">216</span><span class="content">    questions = [</span></span>
+<span class="line"><span class="num">217</span><span class="content">    "What is Blue Mango?",</span></span>
+<span class="line"><span class="num">218</span><span class="content">    "Who owns Blue Mango failures?",</span></span>
+<span class="line"><span class="num">219</span><span class="content">    "What happens if confidence drops below 0.62?",</span></span>
+<span class="line"><span class="num">220</span><span class="content">    "What is the Silver Gate queue?",</span></span>
+<span class="line"><span class="num">221</span><span class="content">    "Who leads Project Sarayu?"
+    ]</span></span>
+<span class="line"><span class="num">224</span><span class="content">    orchestrate(agent, questions)</span></span>
+      </pre>
+    </div>
+    <div class="explain-pane">
+      <h2>Vector Search Before Generation</h2>
+      <p>
+        This example demonstrates a simpler RAG pipeline that embeds
+        entire sentences or facts rather than splitting them into
+        multiple chunks. It illustrates how an agent can retrieve
+        documents by similarity and then answer questions strictly from
+        those documents.
+      </p>
+      <h3>Embedding and Indexing</h3>
+      <ul>
+        <li><strong>SimpleEmbeddingModel</strong> (lines&nbsp;10‑17) maps
+          words to vectors and returns the mean embedding for a sequence
+          of tokens.</li>
+        <li><strong>VectorSearchIndex</strong> (lines&nbsp;20‑43) stores
+          document embeddings and performs a cosine similarity search to
+          rank documents by their relevance to a query embedding.</li>
+        <li><strong>VectorSearchMemory</strong> (lines&nbsp;46‑106) manages
+          vocabulary building (<code>build_vocab()</code>), encodes text
+          into token IDs, builds the embedding model and index, and
+          retrieves the top <em>k</em> documents for a query. The
+          <code>retrieve()</code> method returns a formatted context
+          string showing document IDs, similarity scores and text.</li>
+      </ul>
+      <h3>Agent Logic</h3>
+      <p>
+        The <code>BaseAgent</code> class (lines&nbsp;109‑167) uses
+        <code>VectorSearchMemory</code> to get context for a user question.
+        It builds a prompt that clearly outlines a two‑step process: first
+        retrieve relevant documents, then answer using only those
+        documents. The agent instructs Gemini not to guess and to admit
+        when there isn’t enough context.
+      </p>
+      <p>
+        <code>VectorSearchAgent</code> (lines&nbsp;170‑182) simply provides
+        a system prompt reminding the model of its constraints.
+      </p>
+      <h3>Example Execution</h3>
+      <p>
+        In the main block (lines&nbsp;192‑224), a list of private facts
+        about Project Sarayu and Blue Mango is indexed. A
+        <code>VectorSearchAgent</code> is then asked several questions
+        about the project, and for each question, the agent retrieves
+        three relevant facts and answers using only those facts. This
+        pattern emphasises faithful use of retrieved knowledge and
+        prevents hallucination.
+      </p>
+    </div>
+  </main>
+</body>
+</html>
