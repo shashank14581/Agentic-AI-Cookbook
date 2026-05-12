@@ -1,197 +1,573 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <title>Pattern 8: Parallel Agents Explained</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Pattern 8 — Parallel Agents</title>
+
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      background: #F5F3FF;
-      color: #1e293b;
       font-family: Inter, Arial, sans-serif;
+      background: #f5f3ff;
+      color: #1e293b;
+      overflow-x: hidden;
       line-height: 1.7;
-      margin: 0;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(196, 181, 253, 0.4), transparent 30%),
+        radial-gradient(circle at top right, rgba(134, 239, 172, 0.35), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.25), transparent 25%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(109, 40, 217, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(109, 40, 217, 0.03) 1px, transparent 1px);
+      background-size: 34px 34px;
+      z-index: -1;
+    }
+
     header {
-      background: linear-gradient(to right, #c4b5fd, #86efac);
-      padding: 40px 20px;
-      text-align: center;
-      color: white;
-    }
-    header h1 {
-      font-size: 2.4rem;
-      margin-bottom: 10px;
-    }
-    header p {
-      font-size: 1.1rem;
-      margin: 0;
-    }
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      padding: 40px 20px;
-    }
-    .summary {
-      background: #FAF5FF;
-      border-left: 5px solid #8B5CF6;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 40px;
-    }
-    .summary h2 {
-      margin-top: 0;
-    }
-    .code-explanation {
+      padding: 70px 8%;
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.1fr 0.9fr;
       gap: 40px;
+      align-items: center;
     }
-    .code-block pre {
-      background: #F0FDF4;
-      padding: 20px;
-      border-radius: 12px;
-      overflow-x: auto;
-      white-space: pre;
-      counter-reset: line;
-      font-family: "Source Code Pro", monospace;
+
+    .hero-left h1 {
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.08em;
+      margin-bottom: 24px;
+      font-weight: 1000;
+    }
+
+    .hero-left h1 span {
+      color: #8b5cf6;
+      text-shadow: 5px 5px 0 #1e293b;
+      -webkit-text-stroke: 2px #1e293b;
+    }
+
+    .hero-left p {
+      max-width: 700px;
+      font-size: 1.1rem;
+      color: #475569;
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #86efac;
+      color: #1e293b;
+      border: 2px solid #1e293b;
+      box-shadow: 5px 5px 0 #1e293b;
+      margin-bottom: 24px;
+      font-weight: 1000;
+      font-size: 0.88rem;
+    }
+
+    .pill span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #8b5cf6;
+      border: 2px solid #1e293b;
+    }
+
+    .hero-card {
+      background: white;
+      border-radius: 38px;
+      border: 3px solid #1e293b;
+      box-shadow: 12px 12px 0 #1e293b;
+      padding: 28px;
+      transform: rotate(1.5deg);
+    }
+
+    .hero-face {
+      height: 210px;
+      border-radius: 30px;
+      border: 3px solid #1e293b;
+      background:
+        radial-gradient(circle at 35% 40%, #1e293b 0 12px, transparent 13px),
+        radial-gradient(circle at 65% 40%, #1e293b 0 12px, transparent 13px),
+        radial-gradient(circle at 50% 65%, #8b5cf6 0 32px, transparent 33px),
+        #ede9fe;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .hero-face::after {
+      content: "";
+      position: absolute;
+      width: 110px;
+      height: 55px;
+      border: 6px solid #1e293b;
+      border-top: 0;
+      border-radius: 0 0 90px 90px;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+    }
+
+    .hero-card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-card p {
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .json-stack {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .json-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #faf5ff;
+      border: 2px solid #1e293b;
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 1000;
       color: #1e293b;
     }
-    .code-block pre span {
-      display: block;
+
+    .json-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #1e293b;
+      background: #86efac;
+      flex: 0 0 auto;
     }
-    .code-block pre span::before {
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px);
+      padding: 14px 8%;
+      border-top: 2px solid #1e293b;
+      border-bottom: 2px solid #1e293b;
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #1e293b;
+      background: white;
+      border: 2px solid #1e293b;
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 4px 4px 0 #1e293b;
+      font-weight: 1000;
+      font-size: 0.9rem;
+    }
+
+    nav a:hover {
+      background: #c4b5fd;
+    }
+
+    main {
+      max-width: 1360px;
+      margin: auto;
+      padding: 70px 24px;
+    }
+
+    section {
+      margin-bottom: 90px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .section-title span {
+      background: #8b5cf6;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #1e293b;
+      box-shadow: 4px 4px 0 #1e293b;
+      font-weight: 1000;
+      font-size: 0.84rem;
+    }
+
+    h2 {
+      font-size: clamp(2.3rem, 4vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 1000;
+    }
+
+    .summary {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #1e293b;
+      box-shadow: 10px 10px 0 #1e293b;
+      padding: 30px;
+    }
+
+    .summary p {
+      color: #475569;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .code-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .code-block {
+      border-radius: 36px;
+      overflow: hidden;
+      border: 3px solid #1e293b;
+      box-shadow: 10px 10px 0 #1e293b;
+      background: #1e1b4b;
+    }
+
+    .code-header {
+      background: #86efac;
+      color: #1e293b;
+      padding: 16px 20px;
+      border-bottom: 3px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 1000;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #1e293b;
+    }
+
+    .window-dots span:nth-child(1) { background: #f87171; }
+    .window-dots span:nth-child(2) { background: #fbbf24; }
+    .window-dots span:nth-child(3) { background: #4ade80; }
+
+    .code-block pre {
+      margin: 0;
+      padding: 18px 22px;
+      overflow-x: auto;
+      background: #1e1b4b;
+    }
+
+    .code-block code {
+      display: block;
+      font-family: "Source Code Pro", monospace;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      color: #e0e7ff;
+      counter-reset: line;
+      font-weight: 600;
+    }
+
+    .code-block code span {
+      display: block;
+      white-space: pre;
+    }
+
+    .code-block code span::before {
       counter-increment: line;
       content: counter(line);
       display: inline-block;
-      width: 35px;
-      margin-right: 10px;
-      color: #7E22CE;
+      width: 34px;
+      margin-right: 14px;
+      color: #818cf8;
+      opacity: 0.8;
+      user-select: none;
     }
-    .explanation p {
-      margin-bottom: 20px;
-      background: #F3E8FF;
-      padding: 15px;
-      border-radius: 12px;
-      border-left: 5px solid #A855F7;
+
+    .explanation {
+      background: white;
+      border-radius: 36px;
+      border: 3px solid #1e293b;
+      box-shadow: 10px 10px 0 #1e293b;
+      overflow: hidden;
     }
-    .explanation strong {
-      color: #6D28D9;
+
+    .explanation-header {
+      background: #c4b5fd;
+      color: #1e293b;
+      padding: 16px 20px;
+      border-bottom: 3px solid #1e293b;
+      font-weight: 1000;
     }
-    @media (max-width: 800px) {
-      .code-explanation {
-        grid-template-columns: 1fr;
-      }
+
+    .explanation-content {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .explanation-content p {
+      background: #faf5ff;
+      border: 2px solid #1e293b;
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 5px 5px 0 #1e293b;
+      color: #475569;
+      font-weight: 700;
+    }
+
+    .explanation-content strong {
+      color: #7c3aed;
+    }
+
+    code.inline {
+      background: #c4b5fd;
+      color: #1e293b;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1.5px solid #1e293b;
+      font-weight: 1000;
+    }
+
+    .next-box {
+      background: #1e293b;
+      color: white;
+      border-radius: 36px;
+      border: 3px solid #1e293b;
+      box-shadow: 10px 10px 0 #8b5cf6;
+      padding: 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .next-box h2 {
+      color: white;
+      margin-bottom: 12px;
+      font-size: 2.5rem;
+    }
+
+    .next-box p {
+      color: #cbd5e1;
+      max-width: 760px;
+      font-weight: 700;
+    }
+
+    .next-box a {
+      text-decoration: none;
+      background: #86efac;
+      color: #1e293b;
+      border-radius: 999px;
+      border: 2px solid white;
+      box-shadow: 5px 5px 0 white;
+      padding: 12px 18px;
+      font-weight: 1000;
+    }
+
+    footer {
+      text-align: center;
+      padding: 42px 20px;
+      background: #1e293b;
+      color: white;
+      font-weight: 1000;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 980px) {
+      header { grid-template-columns: 1fr; }
+      .code-layout { grid-template-columns: 1fr; }
     }
   </style>
 </head>
+
 <body>
+
   <header>
-    <h1>Pattern 8: Parallel Agents (Fan‑Out & Fan‑In)</h1>
-    <p>Multiple agents work concurrently, then their outputs are critiqued and synthesized.</p>
-  </header>
-  <div class="container">
-    <div class="summary">
-      <h2>Summary</h2>
-      <p>This pattern uses Python’s <code>asyncio</code> to run multiple agents in parallel. In stage&nbsp;1, several analysts generate independent insights about a topic. In stage&nbsp;2, a critic evaluates each analyst’s output concurrently. Stage&nbsp;3 merges the analyses and critiques into a coherent summary. This fan‑out/fan‑in approach illustrates how to scale reasoning by parallelizing tasks and then synthesizing the results.</p>
+    <div class="hero-left">
+      <div class="pill">
+        <span></span>
+        Pattern 8 · Concurrency
+      </div>
+      <h1>Parallel <span>Fan-Out & Fan-In</span></h1>
+      <p>
+        Why run one agent when you can run ten at once? Pattern 8 uses async execution 
+         to trigger multiple specialized agents simultaneously, then gathers and 
+         synthesizes their insights into a single unified result.
+      </p>
     </div>
-    <div class="code-explanation">
-      <div class="code-block">
-        <pre><code>
-<span>import os, asyncio, nest_asyncio</span>
+
+    <div class="hero-card">
+      <div class="hero-face"></div>
+      <h2>Divide, Conquer, & Synthesize.</h2>
+      <p>Parallel processing makes agents faster and more diverse in perspective.</p>
+      <div class="json-stack">
+        <div class="json-row"><span class="json-dot"></span> Async Fan-Out</div>
+        <div class="json-row"><span class="json-dot"></span> Parallel Critique</div>
+        <div class="json-row"><span class="json-dot"></span> Final Synthesis (Fan-In)</div>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <a href="#summary">Summary</a>
+    <a href="#walkthrough">Code Walkthrough</a>
+    <a href="#next">Next Pattern</a>
+  </nav>
+
+  <main>
+    <section id="summary">
+      <div class="section-title">
+        <span>OVERVIEW</span>
+        <h2>What this pattern teaches</h2>
+      </div>
+      <div class="summary">
+        <p>
+          This pattern transitions from synchronous loops to <strong>Asynchronous workflows</strong> using Python's 
+          <code class="inline">asyncio</code>. It demonstrates a three-stage pipeline:
+        </p>
+        <p>
+          1. <strong>Fan-Out:</strong> Multiple <code class="inline">Analyst</code> agents (Economic, Geopolitical, Tech) process a topic concurrently. <br>
+          2. <strong>Validation:</strong> A <code class="inline">Critic</code> agent scrutinizes each output in parallel. <br>
+          3. <strong>Fan-In:</strong> A <code class="inline">Synthesizer</code> agent merges all perspectives and critiques into a coherent summary.
+        </p>
+      </div>
+    </section>
+
+    <section id="walkthrough">
+      <div class="section-title">
+        <span>CODE</span>
+        <h2>Line-by-line walkthrough</h2>
+      </div>
+
+      <div class="code-layout">
+        <div class="code-block">
+          <div class="code-header">
+            <span>pattern8.py</span>
+            <div class="window-dots"><span></span><span></span><span></span></div>
+          </div>
+          <pre><code><span>import os, asyncio, nest_asyncio</span>
 <span>from google import genai</span>
 <span>from google.genai import types</span>
 
-<span># Async BaseAgent: uses async think()</span>
 <span>class BaseAgent:</span>
 <span>    def __init__(self, name, sys_prompt, model="gemini-2.5-flash-lite"):</span>
 <span>        self.name = name</span>
 <span>        self.sys_prompt = sys_prompt</span>
-<span>        self.memory = []</span>
 <span>        self.client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])</span>
 <span>        self.model = model</span>
-<span>        self._config = types.GenerateContentConfig(</span>
-<span>            thinking_config=types.ThinkingConfig(thinking_budget=0),</span>
-<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)],</span>
-<span>        )</span>
+
 <span>    async def think(self, input_text):</span>
 <span>        contents = [types.Content(role="user", parts=[types.Part.from_text(text=input_text)])]</span>
+<span>        config = types.GenerateContentConfig(</span>
+<span>            system_instruction=[types.Part.from_text(text=self.sys_prompt)]</span>
+<span>        )</span>
 <span>        response = ""</span>
-<span>        stream = await self.client.aio.models.generate_content_stream(model=self.model, contents=contents, config=self._config)</span>
+<span>        stream = await self.client.aio.models.generate_content_stream(</span>
+<span>            model=self.model, contents=contents, config=config</span>
+<span>        )</span>
 <span>        async for chunk in stream:</span>
-<span>            if chunk.text:</span>
-<span>                print(chunk.text, end="", flush=True)</span>
-<span>                response += chunk.text</span>
-<span>        print()</span>
-<span>        self.memory.append((input_text, response))</span>
+<span>            if chunk.text: response += chunk.text</span>
 <span>        return response</span>
 
-<span># Roles: Analyst, Critic, Synthesizer</span>
-<span>class Analyst(BaseAgent):</span>
-<span>    def __init__(self, name, domain):</span>
-<span>        prompt = f"You are {name}, a sharp {domain} analyst. Give a concise 2-sentence insight."</span>
-<span>        super().__init__(name, prompt)</span>
-
-<span>class Critic(BaseAgent):</span>
-<span>    def __init__(self, name):</span>
-<span>        super().__init>(name, f"You are {name}, a ruthless critic. Identify the single biggest flaw. One sentence.")</span>
-
-<span>class Synthesizer(BaseAgent):</span>
-<span>    def __init__(self, name):</span>
-<span>        super().__init>(name, f"You are {name}, a synthesis engine. Merge all inputs into one coherent paragraph.")</span>
-
-<span># Stage 1: Parallel analysts</span>
 <span>async def run_parallel_analysts(topic):</span>
-<span>    analysts = [</span>
-<span>        Analyst("Riya",  "market economics"),</span>
-<span>        Analyst("Arjun", "geopolitical risk"),</span>
-<span>        Analyst("Meera", "technology adoption"),</span>
-<span>    ]</span>
-<span>    async def run(agent):</span>
-<span>        print(f"── {agent.name} ──")</span>
-<span>        return agent.name, await agent.think(topic)</span>
-<span>    results = await asyncio.gather(*[run(a) for a in analysts])</span>
-<span>    return dict(results)</span>
+<span>    analysts = [Analyst("Riya", "economics"), Analyst("Arjun", "risk")]</span>
+<span>    async def run(a): return a.name, await a.think(topic)</span>
+<span>    return dict(await asyncio.gather(*[run(a) for a in analysts]))</span>
 
-<span># Stage 2: Parallel critics</span>
-<span>async def run_parallel_critics(analyst_outputs):</span>
-<span>    async def critique(name, text):</span>
-<span>        critic = Critic("Dev")</span>
-<span>        print(f"── Critic on {name} ──")</span>
-<span>        return name, await critic.think(f"{name} said: {text}")</span>
-<span>    results = await asyncio.gather(*[critique(n, t) for n, t in analyst_outputs.items()])</span>
-<span>    return dict(results)</span>
+<span>async def run_parallel_critics(outputs):</span>
+<span>    async def critique(n, t):</span>
+<span>        c = Critic("Dev")</span>
+<span>        return n, await c.think(f"{n} said: {t}")</span>
+<span>    return dict(await asyncio.gather(*[critique(n, t) for n, t in outputs.items()]))</span>
 
-<span># Stage 3: Synthesis</span>
-<span>async def synthesize(analyst_outputs, critic_outputs):</span>
-<span>    synth = Synthesizer("Priya")</span>
-<span>    combined = "\n".join(</span>
-<span>        f"{name}: {analysis}\n(Critique: {critic_outputs[name]})"</span>
-<span>        for name, analysis in analyst_outputs.items()</span>
-<span>    )</span>
-<span>    return await synth.think(f"Merge these views:\n\n{combined}")</span>
+<span>async def synthesize(analysts, critics):</span>
+<span>    s = Synthesizer("Priya")</span>
+<span>    data = "\n".join([f"{n}: {t} (Critique: {critics[n]})" for n, t in analysts.items()])</span>
+<span>    return await s.think(f"Merge these: {data}")</span>
 
-<span># Main: fan-out then fan-in</span>
 <span>async def main():</span>
-<span>    topic = "The rise of sovereign AI compute infrastructure in emerging economies"</span>
+<span>    topic = "The rise of sovereign AI compute"</span>
 <span>    analysts = await run_parallel_analysts(topic)</span>
 <span>    critiques = await run_parallel_critics(analysts)</span>
-<span>    final = await synthesize(analysts, critiques)</span>
-<span>    print(final)</span>
+<span>    print(await synthesize(analysts, critiques))</span>
 
-<span>nest_asyncio.apply()</span>
 <span>if __name__ == "__main__":</span>
-<span>    asyncio.run(main())</span>
-        </code></pre>
+<span>    asyncio.run(main())</span></code></pre>
+        </div>
+
+        <div class="explanation">
+          <div class="explanation-header">Mental Model</div>
+          <div class="explanation-content">
+            <p><strong>Lines 6-23:</strong> The <code class="inline">BaseAgent</code> now uses <code class="inline">client.aio</code> (Async IO). This allows the Python script to start one request and move to the next without waiting for the first one to finish.</p>
+            <p><strong>Lines 25-28:</strong> <code class="inline">asyncio.gather()</code> is the "Fan-Out" mechanism. It sends multiple analyst prompts to Gemini simultaneously, drastically reducing total execution time.</p>
+            <p><strong>Lines 30-34:</strong> Even the verification step is parallelized. Each analyst's work gets a dedicated critic task running at the same time.</p>
+            <p><strong>Lines 36-39:</strong> The "Fan-In" stage. The <code class="inline">Synthesizer</code> acts as the bottleneck where all parallel streams are merged into one intelligent conclusion.</p>
+            <p><strong>Lines 41-45:</strong> The orchestrator manages the sequence: Start parallel analysts → Start parallel critics → Run synthesis.</p>
+          </div>
+        </div>
       </div>
-      <div class="explanation">
-        <p><strong>Asynchronous BaseAgent:</strong> Unlike previous synchronous patterns, this agent uses an asynchronous <code>think()</code> method to support concurrent execution. It streams responses using <code>generate_content_stream</code> from Gemini’s asynchronous client.</p>
-        <p><strong>Roles:</strong> There are three roles: <code>Analyst</code> produces concise insights on a specified domain, <code>Critic</code> identifies flaws in each analysis, and <code>Synthesizer</code> merges multiple perspectives into one coherent narrative.</p>
-        <p><strong>Stage 1 – Parallel Analysts:</strong> The <code>run_parallel_analysts()</code> function spawns multiple analysts and runs their <code>think()</code> methods concurrently using <code>asyncio.gather()</code>. The function returns a dictionary mapping analyst names to their outputs.</p>
-        <p><strong>Stage 2 – Parallel Critics:</strong> Each analyst output is critiqued in parallel by a single critic agent. Again, <code>asyncio.gather()</code> is used to run critiques concurrently, producing a dictionary of critiques.</p>
-        <p><strong>Stage 3 – Synthesis:</strong> A synthesizer agent receives all analyses and their corresponding critiques in a single prompt. It returns a unified paragraph summarizing and critiquing the topic.</p>
-        <p><strong>Main Function:</strong> Orchestrates the three stages in sequence: fan‑out (analysts and critics run in parallel) followed by fan‑in (synthesis). The use of <code>nest_asyncio.apply()</code> allows asynchronous code to run within interactive environments.</p>
+    </section>
+
+    <section id="next">
+      <div class="next-box">
+        <div>
+          <h2>Next: Self-Correction Loops</h2>
+          <p>Pattern 9 takes reasoning further by allowing agents to detect their own mistakes and re-run their logic.</p>
+        </div>
+        <a href="pattern9.html">Open Pattern 9 →</a>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
+
+  <footer>Agentic AI Cookbook · Pattern 8</footer>
+
 </body>
 </html>
